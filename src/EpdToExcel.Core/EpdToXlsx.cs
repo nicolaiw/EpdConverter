@@ -1,4 +1,5 @@
 ﻿using EpdToExcel.Core.Models;
+using HtmlAgilityPack;
 using OfficeOpenXml;
 using OfficeOpenXml.Style;
 using OfficeOpenXml.Table;
@@ -8,6 +9,7 @@ using System.Drawing;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Net;
 using System.Text;
 using System.Threading.Tasks;
 using System.Xml.Linq;
@@ -16,9 +18,13 @@ namespace EpdToExcel.Core
 {
     // TODO: IEpdImport, IEpdExport <-- use this static class as a Facade.
     //       Write class wich implements this interfaces.
+    
 
     public static class EpdToXlsx
     {
+        private const string FLOW_DATASET_BASE_URI = "http://www.oekobaudat.de/OEKOBAU.DAT/resource";
+
+
         /************************************************
                             Public API
         ************************************************/
@@ -29,6 +35,8 @@ namespace EpdToExcel.Core
             // It's a matter of taste.
 
             var xml = XDocument.Load(epdXmlPath);
+
+            var refFlow = GetReferenceFlow(xml);
 
             //-referenzfluss aus meanamount
             //-prüfen ob die richtig
@@ -65,7 +73,7 @@ namespace EpdToExcel.Core
                                   WasteDisposalC4 = GetEnviromentalIndicatorValue(lci, "C4"),
                                   ReuseAndRecoveryD = GetEnviromentalIndicatorValue(lci, "D"),
                                   DataSetBaseName = GetDataSetBaseName(xml),
-                                  ReferenceFlow = GetReferenceFlow(xml),
+                                  ReferenceFlowInfo = GetReferenceFlowInfo(xml),
                                   ReferenceFlowUnit = GetReferenceFlowUnit(xml),
                                   ProductNumber = productNumber
                               });
@@ -189,8 +197,35 @@ namespace EpdToExcel.Core
             return GetStringValueWithLanguagefilter(dataSetBaseNames, "de");
         }
 
+        private static string GetReferenceFlow(XDocument xml)
+        {
+            // e.g. ../flows/0ce3c9c2-0cb4-40b7-8665-e57a9d1e48fe.xml
+            var flowDataUri = xml.Root
+                                  .Elements()
+                                  .First(e => e.Name.LocalName == "exchanges")
+                                  .Elements()
+                                  .First(e => e.Elements().Where(i => i.Name.LocalName == "meanAmount").Count() == 1)
+                                  .Elements()
+                                  .First(e => e.Name.LocalName == "referenceToFlowDataSet")
+                                  .Attribute("uri")
+                                  .Value
+                                  .Remove(0, 2);
 
-        public static double GetReferenceFlow(XDocument xml)
+            string flowDataSetXmlString;
+            using (var client = new WebClient())
+            {
+                flowDataSetXmlString = client.DownloadString(FLOW_DATASET_BASE_URI + flowDataUri + "?format=xml");
+            }
+
+            // TODO: use agility pack to download the html
+            HtmlDocument doc = new HtmlDocument();
+            doc.LoadHtml(flowDataSetXmlString);
+            var referenceFlow = doc.GetElementbyId("switchInline").FirstChild.InnerHtml;
+
+            return null;
+        }
+
+        private static double GetReferenceFlowInfo(XDocument xml)
         {
             var meanAmount = xml.Root
                                 .Elements()
@@ -205,7 +240,7 @@ namespace EpdToExcel.Core
         }
 
 
-        public static string GetReferenceFlowUnit(XDocument xml)
+        private static string GetReferenceFlowUnit(XDocument xml)
         {
             var referenceFlowUnits = xml.Root
                                        .Elements()

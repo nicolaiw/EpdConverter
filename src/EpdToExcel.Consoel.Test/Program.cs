@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Net;
 using System.Text;
 using System.Threading.Tasks;
 using EpdToExcel.Core;
@@ -20,6 +21,19 @@ namespace EpdToExcel.Console.Test
 
         static void Main(string[] args)
         {
+
+            string text;
+            using (var client = new WebClient())
+            {
+                text = client.DownloadString("http://www.oekobaudat.de/OEKOBAU.DAT/resource/unitgroups/838aaa22-0117-11db-92e3-0800200c9a66?format=xmll&version=03.00.000");
+            //return;?format=xml");
+            }
+
+            // http://www.oekobaudat.de/OEKOBAU.DAT/resource/datastocks/cc02f499-6b0f-4556-bb4a-7abe48e55f71/processes/88559403-7658-48f2-bac9-7986b4d0f4c2?format=xml&lang=de
+            // /OEKOBAU.DAT/resource/flowproperties/93a60a56-a3c8-11da-a746-0800200b9a66?format=html&amp;version=03.00.000
+            // /unitgroups/ad38d542-3fe9-439d-9b95-2f5f7752acaf.xml?format=xml
+            // http://www.oekobaudat.de/OEKOBAU.DAT/resource/flows/cf76b28f-3e3f-406a-aad0-df0b13c8d6e6?format=xml&version=33.00.000
+            //return;
             System.Console.Write("Name des Ordners auf dem Desktop: ");
             var projectFolder = System.Console.ReadLine();
             var epdFolder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), projectFolder);

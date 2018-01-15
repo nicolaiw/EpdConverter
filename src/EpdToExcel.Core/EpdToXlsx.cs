@@ -164,7 +164,7 @@ namespace EpdToExcel.Core
 
 
                 /* AutoFit */
-                for (int i = 1; i <= 22; i++)
+                for (int i = 1; i <= 23; i++)
                 {
                     worksheet.Column(i).AutoFit();
                 }

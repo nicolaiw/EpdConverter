@@ -401,12 +401,11 @@ namespace EpdToExcel.Core
 
             var indicator = GetStringValueWithLanguagefilter(indicators, "de"); // not realy necessary to get the "de" entry
 
-            var indicatorKeyArray = indicator
-                                        .Split(' ')
-                                        .Last()
-                                        .Replace("(", string.Empty)
-                                        .Replace(")", string.Empty)
-                                        .ToCharArray();
+            var indicatorKeyArray = indicator.Split(' ')
+                                             .Last()
+                                             .Replace("(", string.Empty)
+                                             .Replace(")", string.Empty)
+                                             .ToCharArray();
 
             // Die Ökobaudat hat Buchstabendreher in dern Indikatornamen
             // Daher wird die Reihenfolge der Buchstaben vernachlässigt

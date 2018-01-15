@@ -15,6 +15,8 @@ namespace EpdToExcel.Core.Models
          * Beispiel für aggregierte EPD: Spannbeton-Fertigteildecken
          */
 
+        public Guid Uuid { get; set; }
+
         public string Indicator { get; set; }
 
         public string Direction { get; set; }

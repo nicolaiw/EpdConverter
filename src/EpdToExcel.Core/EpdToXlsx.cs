@@ -1,5 +1,4 @@
 ﻿using EpdToExcel.Core.Models;
-using HtmlAgilityPack;
 using OfficeOpenXml;
 using OfficeOpenXml.Style;
 using OfficeOpenXml.Table;
@@ -36,15 +35,8 @@ namespace EpdToExcel.Core
 
             var xml = XDocument.Load(epdXmlPath);
 
-            var refFlow = GetReferenceFlow(xml);
-
-            //-referenzfluss aus meanamount
-            //-prüfen ob die richtig
-            //-prüfen ob alle indikatoren auf de vorhanden .. sonst fehler schmeißen (wichtig für SUMMEWENNS kriterium)
-
-            //var referenceFlow = xml.Root
-            //                       .Elements()
-            //                       .
+            var meanAmount = GetReferenceFlowInfo(xml);
+            var referenceFlowUnit = GetReferenceFlowUnit(xml, meanAmount);
 
             var lciResults = xml.Root
                              .Elements()
@@ -54,6 +46,7 @@ namespace EpdToExcel.Core
                              .Select(lci =>
                               new Epd
                               {
+                                  Uuid = GetUuid(xml),
                                   Indicator = GetIndicatorName(lci),
                                   Direction = GetDirection(lci), // Input or Output
                                   Unit = GetUnit(lci),
@@ -73,8 +66,8 @@ namespace EpdToExcel.Core
                                   WasteDisposalC4 = GetEnviromentalIndicatorValue(lci, "C4"),
                                   ReuseAndRecoveryD = GetEnviromentalIndicatorValue(lci, "D"),
                                   DataSetBaseName = GetDataSetBaseName(xml),
-                                  ReferenceFlowInfo = GetReferenceFlowInfo(xml),
-                                  ReferenceFlowUnit = GetReferenceFlowUnit(xml),
+                                  ReferenceFlow = meanAmount,
+                                  ReferenceFlowUnit = referenceFlowUnit,
                                   ProductNumber = productNumber
                               });
 
@@ -118,13 +111,17 @@ namespace EpdToExcel.Core
                 worksheet.Cells[1, 20].Value = "Produktnummer";
                 worksheet.Cells[1, 21].Value = "Referenzfluss";
                 worksheet.Cells[1, 22].Value = "Referenzfluss - Einheit";
+                worksheet.Cells[1, 23].Value = "UUID";
 
                 /* Add EPDs to Worksheet */
 
                 var rowOffset = 0;
                 for (int j = 0; j < epds.Count(); j++)
                 {
-                    for (int i = 0; i < epds.ElementAt(j).Count(); i++)
+                    var sortedEpds = epds.ElementAt(j).ToList();
+                    sortedEpds.Sort(SortByIndicator);
+
+                    for (int i = 0; i < sortedEpds.Count(); i++)
                     {
                         var row = i + 2 + rowOffset;
 
@@ -150,13 +147,14 @@ namespace EpdToExcel.Core
                         worksheet.Cells[row, 20].Value = epds.ElementAt(j).ElementAt(i).ProductNumber;
                         worksheet.Cells[row, 21].Value = epds.ElementAt(j).ElementAt(i).ReferenceFlow;
                         worksheet.Cells[row, 22].Value = epds.ElementAt(j).ElementAt(i).ReferenceFlowUnit;
+                        worksheet.Cells[row, 23].Value = epds.ElementAt(j).ElementAt(i).Uuid;
                     }
 
                     rowOffset += epds.ElementAt(j).Count() + 1;
                 }
 
                 /* Format as Table */
-                using (ExcelRange range = worksheet.Cells[1, 1, rowOffset, 22])
+                using (ExcelRange range = worksheet.Cells[1, 1, rowOffset, 23])
                 {
                     ExcelTable table = worksheet.Tables.Add(range, "EPD-Daten");
                     table.ShowFilter = true;
@@ -197,7 +195,21 @@ namespace EpdToExcel.Core
             return GetStringValueWithLanguagefilter(dataSetBaseNames, "de");
         }
 
-        private static string GetReferenceFlow(XDocument xml)
+        private static Guid GetUuid(XDocument xml)
+        {
+            var uuidString = xml.Root
+                                .Elements()
+                                .First(e => e.Name.LocalName == "processInformation")
+                                .Elements()
+                                .First(e => e.Name.LocalName == "dataSetInformation")
+                                .Elements()
+                                .First(e => e.Name.LocalName == "UUID")
+                                .Value;
+
+            return new Guid(uuidString);
+        }
+
+        private static string GetReferenceFlowUnit(XDocument xml, double meanAmount)
         {
             // e.g. ../flows/0ce3c9c2-0cb4-40b7-8665-e57a9d1e48fe.xml
             var flowDataUri = xml.Root
@@ -217,12 +229,74 @@ namespace EpdToExcel.Core
                 flowDataSetXmlString = client.DownloadString(FLOW_DATASET_BASE_URI + flowDataUri + "?format=xml");
             }
 
-            // TODO: use agility pack to download the html
-            HtmlDocument doc = new HtmlDocument();
-            doc.LoadHtml(flowDataSetXmlString);
-            var referenceFlow = doc.GetElementbyId("switchInline").FirstChild.InnerHtml;
+            var flowPropertiesUri = XDocument.Parse(flowDataSetXmlString)
+                                             .Root
+                                             .Elements()
+                                             .First(e => e.Name.LocalName == "flowProperties")
+                                             .Elements()
+                                             .First(e => e.Attributes().Any(a => a.Name.LocalName == "dataSetInternalID" && a.Value == "0"))
+                                             .Elements()
+                                             .First(e => e.Name.LocalName == "referenceToFlowPropertyDataSet")
+                                             .Attribute("uri")
+                                             .Value
+                                             .Remove(0, 2);
 
-            return null;
+            string flowPropertiesXmlString;
+            using (var client = new WebClient())
+            {
+                flowPropertiesXmlString = client.DownloadString(FLOW_DATASET_BASE_URI + flowPropertiesUri + "?format=xml");
+            }
+
+            var unitGroupUri = XDocument.Parse(flowPropertiesXmlString)
+                                         .Root
+                                         .Elements()
+                                         .First(e => e.Name.LocalName == "flowPropertiesInformation")
+                                         .Elements()
+                                         .First(e => e.Name.LocalName == "quantitativeReference")
+                                         .Elements()
+                                         .First(e => e.Name.LocalName == "referenceToReferenceUnitGroup")
+                                         .Attribute("uri")
+                                         .Value
+                                         .Remove(0, 2);
+
+            string unitGroupXmlString;
+            using (var client = new WebClient())
+            {
+                unitGroupXmlString = client.DownloadString(FLOW_DATASET_BASE_URI + unitGroupUri + "?format=xml");
+            }
+
+            var referenceToReferenceUnit = XDocument.Parse(unitGroupXmlString)
+                                                    .Root
+                                                    .Elements()
+                                                    .First(e => e.Name.LocalName == "unitGroupInformation")
+                                                    .Elements()
+                                                    .First(e => e.Name.LocalName == "quantitativeReference")
+                                                    .Elements()
+                                                    .First(e => e.Name.LocalName == "referenceToReferenceUnit")
+                                                    .Value;
+
+            var referenceUnitNode = XDocument.Parse(unitGroupXmlString)
+                                             .Root
+                                             .Elements()
+                                             .First(e => e.Name.LocalName == "units")
+                                             .Elements()
+                                             .First(e => e.Attributes().Any(a => a.Name == "dataSetInternalID" && a.Value == referenceToReferenceUnit))
+                                             .Elements();
+
+            var referenceUnitName = referenceUnitNode.First(e => e.Name.LocalName == "name")
+                                                     .Value;
+
+            // Check if the meanValue is the same as the parsed meanAmount from the EPD
+            var meanValue = referenceUnitNode.First(e => e.Name.LocalName == "meanValue")
+                                             .Value;
+
+            if(meanAmount != double.Parse(meanValue, CultureInfo.InvariantCulture))
+            {
+                // TODO: Include more informations (e.g. UUID)
+                throw new Exception("meanAmount from EPD != meanValue from referenceUnit");
+            }
+
+            return referenceUnitName;
         }
 
         private static double GetReferenceFlowInfo(XDocument xml)
@@ -240,20 +314,20 @@ namespace EpdToExcel.Core
         }
 
 
-        private static string GetReferenceFlowUnit(XDocument xml)
-        {
-            var referenceFlowUnits = xml.Root
-                                       .Elements()
-                                       .First(e => e.Name.LocalName == "exchanges")
-                                       .Elements()
-                                       .First(e => e.Elements().Where(i => i.Name.LocalName == "meanAmount").Count() == 1)
-                                       .Elements()
-                                       .First(e => e.Name.LocalName == "referenceToFlowDataSet")
-                                       .Elements()
-                                       .Where(e => e.Name.LocalName == "shortDescription");
+        //private static string GetReferenceFlowUnit(XDocument xml)
+        //{
+        //    var referenceFlowUnits = xml.Root
+        //                               .Elements()
+        //                               .First(e => e.Name.LocalName == "exchanges")
+        //                               .Elements()
+        //                               .First(e => e.Elements().Where(i => i.Name.LocalName == "meanAmount").Count() == 1)
+        //                               .Elements()
+        //                               .First(e => e.Name.LocalName == "referenceToFlowDataSet")
+        //                               .Elements()
+        //                               .Where(e => e.Name.LocalName == "shortDescription");
 
-            return GetStringValueWithLanguagefilter(referenceFlowUnits, "de");
-        }
+        //    return GetStringValueWithLanguagefilter(referenceFlowUnits, "de");
+        //}
 
 
         private static void InsertValueToExcelCell(ExcelRange range, double? value, Color? color = null)
@@ -272,6 +346,45 @@ namespace EpdToExcel.Core
             }
         }
 
+        private static Dictionary<string, string> IndicatorKeyNameMapping = new Dictionary<string, string>
+        {
+            ["PERE"] = "Erneuerbare Primärenergie als Energieträger (PERE)",
+            ["PERM"] = "Erneuerbare Primärenergie zur stofflichen Nutzung (PERM)",
+            ["PERT"] = "Total erneuerbare Primärenergie (PERT)",
+            ["PENRE"] = "Nicht-erneuerbare Primärenergie als Energieträger (PENRE)",
+            ["PENRM"] = "Nicht-erneuerbare Primärenergie zur stofflichen Nutzung (PENRM)",
+            ["PENRT"] = "Total nicht erneuerbare Primärenergie (PENRT)",
+            ["SM"] = "Einsatz von Sekundärstoffen (SM)",
+            ["RSF"] = "Erneuerbare Sekundärbrennstoffe (RSF)",
+            ["NRSF"] = "Nicht erneuerbare Sekundärbrennstoffe (NRSF)",
+            ["FW"] = "Einsatz von Süßwasserressourcen (FW)",
+            ["HWD"] = "Gefährlicher Abfall zur Deponie (HWD)",
+            ["NHWD"] = "Entsorgter nicht gefährlicher Abfall (NHWD)",
+            ["RWD"] = "Entsorgter radioaktiver Abfall (RWD)",
+            ["CRU"] = "Komponenten für die Wiederverwendung (CRU)",
+            ["MFR"] = "Stoffe zum Recycling (MFR)",
+            ["MER"] = "Stoffe für die Energierückgewinnung (MER)",
+            ["EEE"] = "Exportierte elektrische Energie (EEE)",
+            ["EET"] = "Exportierte thermische Energie (EET)",
+            ["GWP"] = "Globales Erwärmungspotenzial (GWP)",
+            ["ODP"] = "Abbaupotenzial der stratosphärischen Ozonschicht (ODP)",
+            ["POCP"] = "Bildungspotenzial für troposphärisches Ozon (POCP)",
+            ["AP"] = "Versauerungspotenzial (AP)",
+            ["EP"] = "Eutrophierungspotenzial (EP)",
+            ["ADPE"] = "Potenzial für den abiotischen Abbau nicht fossiler Ressourcen (ADPE)",
+            ["ADPF"] = "Potenzial für den abiotischen Abbau fossiler Brennstoffe (ADPF)"
+        };
+
+        private static int SortByIndicator(Epd a, Epd b)
+        {
+            var indicatorAcronymA = a.Indicator.Split(' ').Last().Replace("(", string.Empty).Replace(")", string.Empty);
+            var indicatorAcronymB = b.Indicator.Split(' ').Last().Replace("(", string.Empty).Replace(")", string.Empty);
+
+            var indexOfA = Array.IndexOf(IndicatorKeyNameMapping.Keys.ToArray(), indicatorAcronymA);
+            var indexOfB = Array.IndexOf(IndicatorKeyNameMapping.Keys.ToArray(), indicatorAcronymB);
+
+            return indexOfA < indexOfB ? -1 : 1;
+        }
 
         private static string GetIndicatorName(XElement lci)
         {
@@ -298,38 +411,9 @@ namespace EpdToExcel.Core
             // Die Ökobaudat hat Buchstabendreher in dern Indikatornamen
             // Daher wird die Reihenfolge der Buchstaben vernachlässigt
 
-            var indicatorKeyNameMapping = new Dictionary<string, string>
-            {
-                ["PERE"] = "Erneuerbare Primärenergie als Energieträger (PERE)",
-                ["PERM"] = "Erneuerbare Primärenergie zur stofflichen Nutzung (PERM)",
-                ["PERT"] = "Total erneuerbare Primärenergie (PERT)",
-                ["PENRE"] = "Nicht-erneuerbare Primärenergie als Energieträger (PENRE)",
-                ["PENRM"] = "Nicht-erneuerbare Primärenergie zur stofflichen Nutzung (PENRM)",
-                ["PENRT"] = "Total nicht erneuerbare Primärenergie (PENRT)",
-                ["SM"] = "Einsatz von Sekundärstoffen (SM)",
-                ["RSF"] = "Erneuerbare Sekundärbrennstoffe (RSF)",
-                ["NRSF"] = "Nicht erneuerbare Sekundärbrennstoffe (NRSF)",
-                ["FW"] = "Einsatz von Süßwasserressourcen (FW)",
-                ["HWD"] = "Gefährlicher Abfall zur Deponie (HWD)",
-                ["NHWD"] = "Entsorgter nicht gefährlicher Abfall (NHWD)",
-                ["RWD"] = "Entsorgter radioaktiver Abfall (RWD)",
-                ["CRU"] = "Komponenten für die Wiederverwendung (CRU)",
-                ["MFR"] = "Stoffe zum Recycling (MFR)",
-                ["MER"] = "Stoffe für die Energierückgewinnung (MER)",
-                ["EEE"] = "Exportierte elektrische Energie (EEE)",
-                ["EET"] = "Exportierte thermische Energie (EET)",
-                ["GWP"] = "Globales Erwärmungspotenzial (GWP)",
-                ["ODP"] = "Abbaupotenzial der stratosphärischen Ozonschicht (ODP)",
-                ["POCP"] = "Bildungspotenzial für troposphärisches Ozon (POCP)",
-                ["AP"] = "Versauerungspotenzial (AP)",
-                ["EP"] = "Eutrophierungspotenzial (EP)",
-                ["ADPE"] = "Potenzial für den abiotischen Abbau nicht fossiler Ressourcen (ADPE)",
-                ["ADPF"] = "Potenzial für den abiotischen Abbau fossiler Brennstoffe (ADPF)"
-            };
+            var indicatorKey = IndicatorKeyNameMapping.Keys.Single(e => e.ToCharArray().Count() == indicatorKeyArray.Count() && Enumerable.SequenceEqual(e.ToCharArray().OrderBy(x => x), indicatorKeyArray.OrderBy(x => x)));
 
-            var indicatorKey = indicatorKeyNameMapping.Keys.Single(e => e.ToCharArray().Count() == indicatorKeyArray.Count() && Enumerable.SequenceEqual(e.ToCharArray().OrderBy(x => x), indicatorKeyArray.OrderBy(x => x)));
-
-            return indicatorKeyNameMapping[indicatorKey];
+            return IndicatorKeyNameMapping[indicatorKey];
         }
 
 

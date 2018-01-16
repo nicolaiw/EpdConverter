@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 using EpdToExcel.Core;
@@ -12,6 +13,16 @@ namespace EpdToExcel.Console.Test
 {
     class Program
     {
+        [DllImport("kernel32.dll", ExactSpelling = true)]
+        private static extern IntPtr GetConsoleWindow();
+        private static IntPtr ThisConsole = GetConsoleWindow();
+        [DllImport("user32.dll", CharSet = CharSet.Auto, SetLastError = true)]
+        private static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
+        private const int HIDE = 0;
+        private const int MAXIMIZE = 3;
+        private const int MINIMIZE = 6;
+        private const int RESTORE = 9;
+
         private static void L(string msg, System.ConsoleColor color = ConsoleColor.Green)
         {
             System.Console.ForegroundColor = color;
@@ -22,6 +33,16 @@ namespace EpdToExcel.Console.Test
 
         static void Main(string[] args)
         {
+            System.Console.SetWindowSize(System.Console.LargestWindowWidth, System.Console.LargestWindowHeight);
+            ShowWindow(ThisConsole, MAXIMIZE);
+
+            //System.Console.WindowWidth = System.Console.LargestWindowWidth;// adjustedSelectionList.First().Length + 10;
+            //System.Console.WindowHeight = System.Console.LargestWindowHeight;
+            ////System.Console.WindowLeft = 0;
+            ////System.Console.WindowTop = 0;
+            //System.Console.SetWindowPosition(0, 0);
+            //System.Console.p
+
             System.Console.Write("Name des Ordners auf dem Desktop: ");
             var projectFolder = System.Console.ReadLine();
             var epdFolder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), projectFolder);
@@ -172,6 +193,8 @@ namespace EpdToExcel.Console.Test
             }
 
             int currentEntry = 0;
+
+
 
             EmphaziseCurrentLine(adjustedSelectionList[currentEntry], selected[currentEntry]);
 

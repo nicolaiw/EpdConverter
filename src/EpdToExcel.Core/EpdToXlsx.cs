@@ -212,25 +212,56 @@ namespace EpdToExcel.Core
 
         private static string GetReferenceFlowUnit(XDocument xml, double meanAmount)
         {
+            //var tmp = "";
+            //using (var client = new WebClient())
+            //{
+            //    tmp = client.DownloadString(FLOW_DATASET_BASE_URI + "/unitgroups/838aaa22-0117-11db-92e3-0800200c9a66?format=xml");
+            //}
+
+            //var tmp = xml.Root
+            //                               .Elements()
+            //                               .First(e => e.Name.LocalName == "quantitativeReference");
+
+            var quantitativeReference = xml.Root
+                                           .Elements()
+                                           .First(e => e.Name.LocalName == "processInformation")
+                                           .Elements()
+                                           .First(e => e.Name.LocalName == "quantitativeReference")
+                                           .Elements()
+                                           .First(e => e.Name.LocalName == "referenceToReferenceFlow")
+                                           .Value
+                                           .Trim();
+
             // e.g. ../flows/0ce3c9c2-0cb4-40b7-8665-e57a9d1e48fe.xml
-            var flowDataUri = xml.Root
-                                  .Elements()
-                                  .First(e => e.Name.LocalName == "exchanges")
-                                  .Elements()
-                                  .First(e => e.Elements().Where(i => i.Name.LocalName == "meanAmount").Count() == 1)
-                                  .Elements()
-                                  .First(e => e.Name.LocalName == "referenceToFlowDataSet")
-                                  .Attribute("uri")
-                                  .Value
-                                  .Remove(0, 2);
+            var flowRefObjectId = xml.Root
+                                 .Elements()
+                                 .First(e => e.Name.LocalName == "exchanges")
+                                 .Elements()
+                                 .First(e => e.Attribute("dataSetInternalID").Value.Trim() == quantitativeReference)
+                                 .Elements()
+                                 .First(e => e.Name.LocalName == "referenceToFlowDataSet")
+                                 .Attribute("refObjectId")
+                                 .Value
+                                 .Trim(); 
+
+            //string flowDataUri;
+            //if(referenceToFlowDataSet.Attribute("uri") != null)
+            //{
+            //    flowDataUri = referenceToFlowDataSet.Attribute("uri").Value.Trim().Remove(0, 2);
+            //}
+            //else
+            //{
+            //    flowDataUri = "/flows/" + referenceToFlowDataSet.Attribute("refObjectId").Value.Trim();
+            //}
+                                           
 
             string flowDataSetXmlString;
             using (var client = new WebClient())
             {
-                flowDataSetXmlString = client.DownloadString(FLOW_DATASET_BASE_URI + flowDataUri + "?format=xml");
+                flowDataSetXmlString = client.DownloadString(FLOW_DATASET_BASE_URI + "/flows/" + flowRefObjectId + "?format=xml");
             }
 
-            var flowPropertiesUri = XDocument.Parse(flowDataSetXmlString)
+            var flowPropertiesRefObjectId = XDocument.Parse(flowDataSetXmlString)
                                              .Root
                                              .Elements()
                                              .First(e => e.Name.LocalName == "flowProperties")
@@ -238,17 +269,17 @@ namespace EpdToExcel.Core
                                              .First(e => e.Attributes().Any(a => a.Name.LocalName == "dataSetInternalID" && a.Value == "0"))
                                              .Elements()
                                              .First(e => e.Name.LocalName == "referenceToFlowPropertyDataSet")
-                                             .Attribute("uri")
+                                             .Attribute("refObjectId")
                                              .Value
-                                             .Remove(0, 2);
+                                             .Trim();
 
             string flowPropertiesXmlString;
             using (var client = new WebClient())
             {
-                flowPropertiesXmlString = client.DownloadString(FLOW_DATASET_BASE_URI + flowPropertiesUri + "?format=xml");
+                flowPropertiesXmlString = client.DownloadString(FLOW_DATASET_BASE_URI + "/flowproperties/" + flowPropertiesRefObjectId + "?format=xml");
             }
 
-            var unitGroupUri = XDocument.Parse(flowPropertiesXmlString)
+            var unitGroupUriRefObjectId = XDocument.Parse(flowPropertiesXmlString)
                                          .Root
                                          .Elements()
                                          .First(e => e.Name.LocalName == "flowPropertiesInformation")
@@ -256,14 +287,17 @@ namespace EpdToExcel.Core
                                          .First(e => e.Name.LocalName == "quantitativeReference")
                                          .Elements()
                                          .First(e => e.Name.LocalName == "referenceToReferenceUnitGroup")
-                                         .Attribute("uri")
+                                         .Attribute("refObjectId")
                                          .Value
                                          .Remove(0, 2);
 
             string unitGroupXmlString;
             using (var client = new WebClient())
             {
-                unitGroupXmlString = client.DownloadString(FLOW_DATASET_BASE_URI + unitGroupUri + "?format=xml");
+                //unitGroupXmlString = client.DownloadString(FLOW_DATASET_BASE_URI + "/flowproperties/" + unitGroupUriRefObjectId + "?format=xml");
+                unitGroupXmlString = client.DownloadString("http://lca.jrc.ec.europa.eu/lcainfohub/datasets/ilcd/flowproperties/" + unitGroupUriRefObjectId + ".xml");
+
+                //http://lca.jrc.ec.europa.eu/lcainfohub/datasets/ilcd/flowproperties/
             }
 
             var referenceToReferenceUnit = XDocument.Parse(unitGroupXmlString)

@@ -49,7 +49,8 @@ namespace EpdToExcel.Console.Test
                 projectFile = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), projectName + ".xlsx");
             }
 
-            L("Indikatoren wählen - Leertaste = aus/ab -wählen, Enter = bestätigen, Navigation mit Pfeiltasten, Escape = ALLE aus/ab -wählen", ConsoleColor.Cyan);
+            L("Indikatoren wählen:", ConsoleColor.Cyan);
+            L("Leertaste = aus/ab -wählen | Enter = bestätigen | Navigation mit Pfeiltasten | Escape = ALLE aus/ab -wählen", ConsoleColor.DarkYellow);
 
             var indicatorMenu = new List<Tuple<string, Action<int, bool>>>();
             var selectedIndicators = new List<string>();
@@ -119,37 +120,42 @@ namespace EpdToExcel.Console.Test
 
         private static void ClearCurrentLine(string currentText, bool selected)
         {
-            // Clear current line
+            // Clear the emphaziser " <--"
+            System.Console.SetCursorPosition(currentText.Length, System.Console.CursorTop);
+            System.Console.Write(new string(' ', 4));
+
             System.Console.SetCursorPosition(0, System.Console.CursorTop);
-            System.Console.ForegroundColor = ConsoleColor.Gray;
+            System.Console.ForegroundColor = selected ? ConsoleColor.Cyan : ConsoleColor.Gray;
 
             var adjustedText = currentText.Remove(currentText.Length - 2, 1).Insert(currentText.Length - 2, selected ? "X" : " ");
 
             System.Console.Write(adjustedText);
+            System.Console.SetCursorPosition(System.Console.CursorLeft - 2, System.Console.CursorTop);
         }
-    
+
 
         private static void EmphaziseCurrentLine(string text, bool selected)
         {
             // Emphazise new line
             System.Console.SetCursorPosition(0, System.Console.CursorTop);
-            System.Console.ForegroundColor = ConsoleColor.Cyan;
+            System.Console.ForegroundColor = selected ? ConsoleColor.Cyan : ConsoleColor.Gray;
 
             var adjustedText = text.Remove(text.Length - 2, 1).Insert(text.Length - 2, selected ? "X" : " ");
-            System.Console.Write(adjustedText);
 
-            System.Console.SetCursorPosition(System.Console.CursorLeft - 2, System.Console.CursorTop);
+            System.Console.Write(adjustedText +  " <--");
+            System.Console.SetCursorPosition(System.Console.CursorLeft - 6, System.Console.CursorTop);
         }
 
 
         private static void ShowIndicatorSelectionList(List<Tuple<string, Action<int, bool>>> selectionList)
         {
-            var adjustedSelectionList = selectionList.Select((t, i) => (i+1).ToString() + ". " + t.Item1).ToList();
+            var adjustedSelectionList = selectionList.Select((t, i) => (i + 1).ToString() + ". " + t.Item1).ToList();
             var longestEntryLength = adjustedSelectionList.Select(t => t.Count()).Max();
             adjustedSelectionList = adjustedSelectionList.Select(t => t + new string(' ', longestEntryLength - t.Length) + " [X]").ToList();
 
             foreach (var item in adjustedSelectionList)
             {
+                System.Console.ForegroundColor = ConsoleColor.Cyan;
                 System.Console.WriteLine(item);
             }
 
@@ -176,12 +182,11 @@ namespace EpdToExcel.Console.Test
                     case ConsoleKey.Spacebar:
 
                         var newChar = selected[currentEntry] ? ' ' : 'X';
+                        selected[currentEntry] = !selected[currentEntry];
 
-                        System.Console.Write(newChar);
+                        EmphaziseCurrentLine(adjustedSelectionList[currentEntry], selected[currentEntry]);
 
                         System.Console.SetCursorPosition(System.Console.CursorLeft - 1, System.Console.CursorTop);
-
-                        selected[currentEntry] = !selected[currentEntry];
 
                         selectionList[currentEntry].Item2(currentEntry, selected[currentEntry]);
 
@@ -225,7 +230,6 @@ namespace EpdToExcel.Console.Test
 
                         break;
 
-
                     case ConsoleKey.Escape:
 
                         allSelect = !allSelect;
@@ -233,20 +237,20 @@ namespace EpdToExcel.Console.Test
                         var selectChar = allSelect ? 'X' : ' ';
 
                         System.Console.SetCursorPosition(System.Console.CursorLeft, System.Console.CursorTop - currentEntry - 1);
-                        
 
                         for (int i = 0; i < selectionList.Count(); i++)
                         {
-                            System.Console.ForegroundColor = i == currentEntry ? ConsoleColor.Cyan : ConsoleColor.Gray;
                             System.Console.SetCursorPosition(System.Console.CursorLeft, System.Console.CursorTop + 1);
-                            System.Console.Write(selectChar);
-                            System.Console.SetCursorPosition(System.Console.CursorLeft - 1, System.Console.CursorTop);
+
+                            ClearCurrentLine(adjustedSelectionList[i], allSelect);
 
                             selectionList[i].Item2(i, allSelect);
                             selected[i] = allSelect;
                         }
 
                         System.Console.SetCursorPosition(System.Console.CursorLeft, System.Console.CursorTop - selectionList.Count() + currentEntry + 1);
+
+                        EmphaziseCurrentLine(adjustedSelectionList[currentEntry], allSelect);
 
                         break;
                     case ConsoleKey.Enter:

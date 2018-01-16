@@ -28,7 +28,7 @@ namespace EpdToExcel.Core
                             Public API
         ************************************************/
 
-        public static IEnumerable<Epd> GetEpdFromXml(string epdXmlPath, int productNumber)
+        public static IEnumerable<Epd> GetEpdFromXml(string epdXmlPath, int productNumber, List<string> indicatorFilter)
         {
             // Another possibility would be to use XPath instead of Linq.
             // It's a matter of taste.
@@ -43,11 +43,12 @@ namespace EpdToExcel.Core
                              .Where(e => e.Name.LocalName == "exchanges" || e.Name.LocalName == "LCIAResults")
                              .Elements()
                              .Where(e => e.Elements().Any(n => n.Name.LocalName == "other"))  // Skip reference data flow
+                             .Where(lci => indicatorFilter.Contains(GetIndicatorKeyValue(lci).Item1))
                              .Select(lci =>
                               new Epd
                               {
                                   Uuid = GetUuid(xml),
-                                  Indicator = GetIndicatorName(lci),
+                                  Indicator = GetIndicatorKeyValue(lci).Item2,
                                   Direction = GetDirection(lci), // Input or Output
                                   Unit = GetUnit(lci),
                                   ProductionA1ToA3 = GetEnviromentalIndicatorValueA1ToA3(lci), // A1 - A3 Special case
@@ -346,7 +347,7 @@ namespace EpdToExcel.Core
             }
         }
 
-        private static Dictionary<string, string> IndicatorKeyNameMapping = new Dictionary<string, string>
+        public static Dictionary<string, string> IndicatorKeyNameMapping = new Dictionary<string, string>
         {
             ["PERE"] = "Erneuerbare Primärenergie als Energieträger (PERE)",
             ["PERM"] = "Erneuerbare Primärenergie zur stofflichen Nutzung (PERM)",
@@ -386,7 +387,7 @@ namespace EpdToExcel.Core
             return indexOfA < indexOfB ? -1 : 1;
         }
 
-        private static string GetIndicatorName(XElement lci)
+        private static Tuple<string, string> GetIndicatorKeyValue(XElement lci)
         {
             var epdNameNodeMapping = new Dictionary<string, string>
             {
@@ -412,7 +413,7 @@ namespace EpdToExcel.Core
 
             var indicatorKey = IndicatorKeyNameMapping.Keys.Single(e => e.ToCharArray().Count() == indicatorKeyArray.Count() && Enumerable.SequenceEqual(e.ToCharArray().OrderBy(x => x), indicatorKeyArray.OrderBy(x => x)));
 
-            return IndicatorKeyNameMapping[indicatorKey];
+            return new Tuple<string,string>(indicatorKey, IndicatorKeyNameMapping[indicatorKey]);
         }
 
 

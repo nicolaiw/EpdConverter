@@ -15,25 +15,13 @@ namespace EpdToExcel.Console.Test
         private static void L(string msg, System.ConsoleColor color = ConsoleColor.Green)
         {
             System.Console.ForegroundColor = color;
-            System.Console.WriteLine(msg +  "   " + Environment.NewLine);
-            System.Console.ForegroundColor = ConsoleColor.White;
+            System.Console.WriteLine(msg + "   " + Environment.NewLine);
+            System.Console.ForegroundColor = ConsoleColor.Gray;
         }
+
 
         static void Main(string[] args)
         {
-
-            string text;
-            using (var client = new WebClient())
-            {
-                text = client.DownloadString("http://www.oekobaudat.de/OEKOBAU.DAT/resource/unitgroups/838aaa22-0117-11db-92e3-0800200c9a66?format=xmll&version=03.00.000");
-            //return;?format=xml");
-            }
-
-            // http://www.oekobaudat.de/OEKOBAU.DAT/resource/datastocks/cc02f499-6b0f-4556-bb4a-7abe48e55f71/processes/88559403-7658-48f2-bac9-7986b4d0f4c2?format=xml&lang=de
-            // /OEKOBAU.DAT/resource/flowproperties/93a60a56-a3c8-11da-a746-0800200b9a66?format=html&amp;version=03.00.000
-            // /unitgroups/ad38d542-3fe9-439d-9b95-2f5f7752acaf.xml?format=xml
-            // http://www.oekobaudat.de/OEKOBAU.DAT/resource/flows/cf76b28f-3e3f-406a-aad0-df0b13c8d6e6?format=xml&version=33.00.000
-            //return;
             System.Console.Write("Name des Ordners auf dem Desktop: ");
             var projectFolder = System.Console.ReadLine();
             var epdFolder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), projectFolder);
@@ -61,6 +49,30 @@ namespace EpdToExcel.Console.Test
                 projectFile = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), projectName + ".xlsx");
             }
 
+            L("Indikatoren wählen - Leertaste = aus/ab -wählen, Enter = bestätigen, Navigation mit Pfeiltasten, Escape = ALLE aus/ab -wählen", ConsoleColor.Cyan);
+
+            var indicatorMenu = new List<Tuple<string, Action<int, bool>>>();
+            var selectedIndicators = new List<string>();
+            var indicators = EpdToXlsx.IndicatorKeyNameMapping.Values.ToList();
+
+            for (var i = 0; i < indicators.Count(); i++)
+            {
+                selectedIndicators.Add(EpdToXlsx.IndicatorKeyNameMapping.Keys.ElementAt(i));
+
+                indicatorMenu.Add(
+                    new Tuple<string, Action<int, bool>>(indicators[i], (index, selected) =>
+                    {
+                        var epdKey = EpdToXlsx.IndicatorKeyNameMapping.Keys.ElementAt(index);
+                        selectedIndicators.Remove(epdKey);
+                        if (selected)
+                        {
+                            selectedIndicators.Add(epdKey);
+                        }
+                    }));
+            }
+
+            ShowIndicatorSelectionList(indicatorMenu);
+
             var epdFiles = new DirectoryInfo(epdFolder).GetFiles("*.xml");
 
             L($"\nFound {epdFiles.Count()} xml file(s).");
@@ -72,8 +84,8 @@ namespace EpdToExcel.Console.Test
             {
                 try
                 {
-                    L($"{i +1}. {epdFiles[i].Name} done.");
-                    epds.Add(EpdToXlsx.GetEpdFromXml(epdFiles[i].FullName, i + 1));
+                    L($"{i + 1}. {epdFiles[i].Name} done.");
+                    epds.Add(EpdToXlsx.GetEpdFromXml(epdFiles[i].FullName, i + 1, selectedIndicators));
                 }
                 catch (Exception ex)
                 {
@@ -102,6 +114,147 @@ namespace EpdToExcel.Console.Test
 
 
             System.Console.ReadLine();
+        }
+
+
+        private static void ClearCurrentLine(string currentText, bool selected)
+        {
+            // Clear current line
+            System.Console.SetCursorPosition(0, System.Console.CursorTop);
+            System.Console.ForegroundColor = ConsoleColor.Gray;
+
+            var adjustedText = currentText.Remove(currentText.Length - 2, 1).Insert(currentText.Length - 2, selected ? "X" : " ");
+
+            System.Console.Write(adjustedText);
+        }
+    
+
+        private static void EmphaziseCurrentLine(string text, bool selected)
+        {
+            // Emphazise new line
+            System.Console.SetCursorPosition(0, System.Console.CursorTop);
+            System.Console.ForegroundColor = ConsoleColor.Cyan;
+
+            var adjustedText = text.Remove(text.Length - 2, 1).Insert(text.Length - 2, selected ? "X" : " ");
+            System.Console.Write(adjustedText);
+
+            System.Console.SetCursorPosition(System.Console.CursorLeft - 2, System.Console.CursorTop);
+        }
+
+
+        private static void ShowIndicatorSelectionList(List<Tuple<string, Action<int, bool>>> selectionList)
+        {
+            var adjustedSelectionList = selectionList.Select((t, i) => (i+1).ToString() + ". " + t.Item1).ToList();
+            var longestEntryLength = adjustedSelectionList.Select(t => t.Count()).Max();
+            adjustedSelectionList = adjustedSelectionList.Select(t => t + new string(' ', longestEntryLength - t.Length) + " [X]").ToList();
+
+            foreach (var item in adjustedSelectionList)
+            {
+                System.Console.WriteLine(item);
+            }
+
+            var initialCursorPosTop = System.Console.CursorTop;
+
+            System.Console.SetCursorPosition(longestEntryLength + 2, initialCursorPosTop - selectionList.Count());
+
+            var selected = new Dictionary<int, bool>();
+
+            var allSelect = true;
+            for (int i = 0; i < selectionList.Count; i++)
+            {
+                selected.Add(i, allSelect);
+            }
+
+            int currentEntry = 0;
+
+            EmphaziseCurrentLine(adjustedSelectionList[currentEntry], selected[currentEntry]);
+
+            while (true)
+            {
+                switch (System.Console.ReadKey(true).Key)
+                {
+                    case ConsoleKey.Spacebar:
+
+                        var newChar = selected[currentEntry] ? ' ' : 'X';
+
+                        System.Console.Write(newChar);
+
+                        System.Console.SetCursorPosition(System.Console.CursorLeft - 1, System.Console.CursorTop);
+
+                        selected[currentEntry] = !selected[currentEntry];
+
+                        selectionList[currentEntry].Item2(currentEntry, selected[currentEntry]);
+
+                        break;
+
+                    case ConsoleKey.DownArrow:
+
+                        ClearCurrentLine(adjustedSelectionList[currentEntry], selected[currentEntry]);
+
+                        if (currentEntry + 1 < selectionList.Count)
+                        {
+                            currentEntry++;
+                            System.Console.SetCursorPosition(0, System.Console.CursorTop + 1);
+                        }
+                        else
+                        {
+                            currentEntry = 0;
+                            System.Console.SetCursorPosition(0, System.Console.CursorTop - (selectionList.Count() - 1));
+                        }
+
+                        EmphaziseCurrentLine(adjustedSelectionList[currentEntry], selected[currentEntry]);
+
+                        break;
+
+                    case ConsoleKey.UpArrow:
+
+                        ClearCurrentLine(adjustedSelectionList[currentEntry], selected[currentEntry]);
+
+                        if (currentEntry - 1 >= 0)
+                        {
+                            currentEntry--;
+                            System.Console.SetCursorPosition(System.Console.CursorLeft, System.Console.CursorTop + -1);
+                        }
+                        else
+                        {
+                            currentEntry = selectionList.Count() - 1;
+                            System.Console.SetCursorPosition(System.Console.CursorLeft, System.Console.CursorTop + currentEntry);
+                        }
+
+                        EmphaziseCurrentLine(adjustedSelectionList[currentEntry], selected[currentEntry]);
+
+                        break;
+
+
+                    case ConsoleKey.Escape:
+
+                        allSelect = !allSelect;
+
+                        var selectChar = allSelect ? 'X' : ' ';
+
+                        System.Console.SetCursorPosition(System.Console.CursorLeft, System.Console.CursorTop - currentEntry - 1);
+                        
+
+                        for (int i = 0; i < selectionList.Count(); i++)
+                        {
+                            System.Console.ForegroundColor = i == currentEntry ? ConsoleColor.Cyan : ConsoleColor.Gray;
+                            System.Console.SetCursorPosition(System.Console.CursorLeft, System.Console.CursorTop + 1);
+                            System.Console.Write(selectChar);
+                            System.Console.SetCursorPosition(System.Console.CursorLeft - 1, System.Console.CursorTop);
+
+                            selectionList[i].Item2(i, allSelect);
+                            selected[i] = allSelect;
+                        }
+
+                        System.Console.SetCursorPosition(System.Console.CursorLeft, System.Console.CursorTop - selectionList.Count() + currentEntry + 1);
+
+                        break;
+                    case ConsoleKey.Enter:
+
+                        System.Console.SetCursorPosition(0, System.Console.CursorTop + (selectionList.Count() - currentEntry));
+                        return;
+                }
+            }
         }
     }
 }

@@ -23,6 +23,7 @@ namespace EpdToExcel.Console.Test
         private const int MINIMIZE = 6;
         private const int RESTORE = 9;
 
+
         private static void L(string msg, System.ConsoleColor color = ConsoleColor.Green)
         {
             System.Console.ForegroundColor = color;
@@ -36,17 +37,9 @@ namespace EpdToExcel.Console.Test
             System.Console.SetWindowSize(System.Console.LargestWindowWidth, System.Console.LargestWindowHeight);
             ShowWindow(ThisConsole, MAXIMIZE);
 
-            //System.Console.WindowWidth = System.Console.LargestWindowWidth;// adjustedSelectionList.First().Length + 10;
-            //System.Console.WindowHeight = System.Console.LargestWindowHeight;
-            ////System.Console.WindowLeft = 0;
-            ////System.Console.WindowTop = 0;
-            //System.Console.SetWindowPosition(0, 0);
-            //System.Console.p
-
             System.Console.Write("Name des Ordners auf dem Desktop: ");
             var projectFolder = System.Console.ReadLine();
             var epdFolder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), projectFolder);
-
 
             while (!Directory.Exists(epdFolder))
             {
@@ -56,11 +49,9 @@ namespace EpdToExcel.Console.Test
                 epdFolder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), projectFolder);
             }
 
-
             System.Console.Write("\nName den das Projekt erhalten soll: ");
             var projectName = System.Console.ReadLine();
             var projectFile = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), projectName + ".xlsx");
-
 
             while (File.Exists(projectFile))
             {
@@ -119,7 +110,6 @@ namespace EpdToExcel.Console.Test
                 }
             }
 
-
             try
             {
                 L("Start exporting ...");
@@ -133,7 +123,6 @@ namespace EpdToExcel.Console.Test
                 L($"Export failed:", ConsoleColor.Red);
                 L(ex.ToString(), ConsoleColor.Red);
             }
-
 
             System.Console.ReadLine();
         }
@@ -193,8 +182,6 @@ namespace EpdToExcel.Console.Test
             }
 
             int currentEntry = 0;
-
-
 
             EmphaziseCurrentLine(adjustedSelectionList[currentEntry], selected[currentEntry]);
 

@@ -279,7 +279,7 @@ namespace EpdToExcel.Core
                 flowPropertiesXmlString = client.DownloadString(FLOW_DATASET_BASE_URI + "/flowproperties/" + flowPropertiesRefObjectId + "?format=xml");
             }
 
-            var unitGroupUriRefObjectId = XDocument.Parse(flowPropertiesXmlString)
+            var unitGroupRefObjectId = XDocument.Parse(flowPropertiesXmlString)
                                          .Root
                                          .Elements()
                                          .First(e => e.Name.LocalName == "flowPropertiesInformation")
@@ -289,13 +289,13 @@ namespace EpdToExcel.Core
                                          .First(e => e.Name.LocalName == "referenceToReferenceUnitGroup")
                                          .Attribute("refObjectId")
                                          .Value
-                                         .Remove(0, 2);
+                                         .Trim();
 
             string unitGroupXmlString;
             using (var client = new WebClient())
             {
                 //unitGroupXmlString = client.DownloadString(FLOW_DATASET_BASE_URI + "/flowproperties/" + unitGroupUriRefObjectId + "?format=xml");
-                unitGroupXmlString = client.DownloadString("http://lca.jrc.ec.europa.eu/lcainfohub/datasets/ilcd/flowproperties/" + unitGroupUriRefObjectId + ".xml");
+                unitGroupXmlString = client.DownloadString(FLOW_DATASET_BASE_URI +  "/unitgroups/" + unitGroupRefObjectId + " ?format=xml");
 
                 //http://lca.jrc.ec.europa.eu/lcainfohub/datasets/ilcd/flowproperties/
             }

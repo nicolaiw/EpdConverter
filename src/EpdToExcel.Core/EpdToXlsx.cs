@@ -17,7 +17,7 @@ namespace EpdToExcel.Core
 {
     // TODO: IEpdImport, IEpdExport <-- use this static class as a Facade.
     //       Write class wich implements this interfaces.
-    
+
 
     public static class EpdToXlsx
     {
@@ -28,15 +28,25 @@ namespace EpdToExcel.Core
                             Public API
         ************************************************/
 
-        public static IEnumerable<Epd> GetEpdFromXml(string epdXmlPath, int productNumber, List<string> indicatorFilter)
+        public static IEnumerable<Epd> GetEpdFromXml(string epdXmlPath, int productNumber, List<string> indicatorFilter, Action<string> log)
         {
             // Another possibility would be to use XPath instead of Linq.
             // It's a matter of taste.
 
             var xml = XDocument.Load(epdXmlPath);
 
-            var meanAmount = GetReferenceFlowInfo(xml);
-            var referenceFlowUnit = GetReferenceFlowUnit(xml, meanAmount);
+            var meanAmount = GetReferenceFlowMeanAmount(xml);
+            string referenceFlowUnit = string.Empty;
+
+            try
+            {
+                referenceFlowUnit = GetReferenceFlowUnit(xml, meanAmount);
+            }
+            catch(Exception ex)
+            {
+                // TODO: Log ex
+                log("Fetching reference unit failed.");
+            }
 
             var lciResults = xml.Root
                              .Elements()
@@ -69,6 +79,7 @@ namespace EpdToExcel.Core
                                   DataSetBaseName = GetDataSetBaseName(xml),
                                   ReferenceFlow = meanAmount,
                                   ReferenceFlowUnit = referenceFlowUnit,
+                                  ReferenceFlowInfo = GetReferenceFlowInfo(xml),
                                   ProductNumber = productNumber
                               });
 
@@ -112,7 +123,9 @@ namespace EpdToExcel.Core
                 worksheet.Cells[1, 20].Value = "Produktnummer";
                 worksheet.Cells[1, 21].Value = "Referenzfluss";
                 worksheet.Cells[1, 22].Value = "Referenzfluss - Einheit";
-                worksheet.Cells[1, 23].Value = "UUID";
+                worksheet.Cells[1, 23].Value = "Referenzfluss - Info";
+                worksheet.Cells[1, 24].Value = "UUID";
+
 
                 /* Add EPDs to Worksheet */
 
@@ -148,14 +161,15 @@ namespace EpdToExcel.Core
                         worksheet.Cells[row, 20].Value = epds.ElementAt(j).ElementAt(i).ProductNumber;
                         worksheet.Cells[row, 21].Value = epds.ElementAt(j).ElementAt(i).ReferenceFlow;
                         worksheet.Cells[row, 22].Value = epds.ElementAt(j).ElementAt(i).ReferenceFlowUnit;
-                        worksheet.Cells[row, 23].Value = epds.ElementAt(j).ElementAt(i).Uuid;
+                        worksheet.Cells[row, 23].Value = epds.ElementAt(j).ElementAt(i).ReferenceFlowInfo;
+                        worksheet.Cells[row, 24].Value = epds.ElementAt(j).ElementAt(i).Uuid;
                     }
 
                     rowOffset += epds.ElementAt(j).Count() + 1;
                 }
 
                 /* Format as Table */
-                using (ExcelRange range = worksheet.Cells[1, 1, rowOffset, 23])
+                using (ExcelRange range = worksheet.Cells[1, 1, rowOffset, 24])
                 {
                     ExcelTable table = worksheet.Tables.Add(range, "EPD-Daten");
                     table.ShowFilter = true;
@@ -165,7 +179,7 @@ namespace EpdToExcel.Core
 
 
                 /* AutoFit */
-                for (int i = 1; i <= 23; i++)
+                for (int i = 1; i <= 24; i++)
                 {
                     worksheet.Column(i).AutoFit();
                 }
@@ -232,32 +246,21 @@ namespace EpdToExcel.Core
                                            .Value
                                            .Trim();
 
-            // e.g. ../flows/0ce3c9c2-0cb4-40b7-8665-e57a9d1e48fe.xml
             var flowRefObjectId = xml.Root
-                                 .Elements()
-                                 .First(e => e.Name.LocalName == "exchanges")
-                                 .Elements()
-                                 .First(e => e.Attribute("dataSetInternalID").Value.Trim() == quantitativeReference)
-                                 .Elements()
-                                 .First(e => e.Name.LocalName == "referenceToFlowDataSet")
-                                 .Attribute("refObjectId")
-                                 .Value
-                                 .Trim(); 
-
-            //string flowDataUri;
-            //if(referenceToFlowDataSet.Attribute("uri") != null)
-            //{
-            //    flowDataUri = referenceToFlowDataSet.Attribute("uri").Value.Trim().Remove(0, 2);
-            //}
-            //else
-            //{
-            //    flowDataUri = "/flows/" + referenceToFlowDataSet.Attribute("refObjectId").Value.Trim();
-            //}
-                                           
+                                     .Elements()
+                                     .First(e => e.Name.LocalName == "exchanges")
+                                     .Elements()
+                                     .First(e => e.Attribute("dataSetInternalID").Value.Trim() == quantitativeReference)
+                                     .Elements()
+                                     .First(e => e.Name.LocalName == "referenceToFlowDataSet")
+                                     .Attribute("refObjectId")
+                                     .Value
+                                     .Trim();
 
             string flowDataSetXmlString;
             using (var client = new WebClient())
             {
+                client.Encoding = Encoding.UTF8;
                 flowDataSetXmlString = client.DownloadString(FLOW_DATASET_BASE_URI + "/flows/" + flowRefObjectId + "?format=xml");
             }
 
@@ -276,6 +279,7 @@ namespace EpdToExcel.Core
             string flowPropertiesXmlString;
             using (var client = new WebClient())
             {
+                client.Encoding = Encoding.UTF8;
                 flowPropertiesXmlString = client.DownloadString(FLOW_DATASET_BASE_URI + "/flowproperties/" + flowPropertiesRefObjectId + "?format=xml");
             }
 
@@ -294,10 +298,8 @@ namespace EpdToExcel.Core
             string unitGroupXmlString;
             using (var client = new WebClient())
             {
-                //unitGroupXmlString = client.DownloadString(FLOW_DATASET_BASE_URI + "/flowproperties/" + unitGroupUriRefObjectId + "?format=xml");
-                unitGroupXmlString = client.DownloadString(FLOW_DATASET_BASE_URI +  "/unitgroups/" + unitGroupRefObjectId + " ?format=xml");
-
-                //http://lca.jrc.ec.europa.eu/lcainfohub/datasets/ilcd/flowproperties/
+                client.Encoding = Encoding.UTF8;
+                unitGroupXmlString = client.DownloadString(FLOW_DATASET_BASE_URI + "/unitgroups/" + unitGroupRefObjectId + " ?format=xml");
             }
 
             var referenceToReferenceUnit = XDocument.Parse(unitGroupXmlString)
@@ -325,7 +327,7 @@ namespace EpdToExcel.Core
             var meanValue = referenceUnitNode.First(e => e.Name.LocalName == "meanValue")
                                              .Value;
 
-            if(meanAmount != double.Parse(meanValue, CultureInfo.InvariantCulture))
+            if (meanAmount != double.Parse(meanValue, CultureInfo.InvariantCulture))
             {
                 // TODO: Include more informations (e.g. UUID)
                 throw new Exception("meanAmount from EPD != meanValue from referenceUnit");
@@ -334,13 +336,23 @@ namespace EpdToExcel.Core
             return referenceUnitName;
         }
 
-        private static double GetReferenceFlowInfo(XDocument xml)
+        private static double GetReferenceFlowMeanAmount(XDocument xml)
         {
+            var referenceToReferenceFlow = xml.Root
+                                .Elements()
+                                .First(e => e.Name.LocalName == "processInformation")
+                                .Elements()
+                                .First(e => e.Name.LocalName == "quantitativeReference")
+                                .Elements()
+                                .First(e => e.Name.LocalName == "referenceToReferenceFlow")
+                                .Value;
+
+
             var meanAmount = xml.Root
                                 .Elements()
                                 .First(e => e.Name.LocalName == "exchanges")
                                 .Elements()
-                                .First(e => e.Elements().Where(i => i.Name.LocalName == "meanAmount").Count() == 1)
+                                .First(e => e.Attribute("dataSetInternalID").Value == referenceToReferenceFlow)
                                 .Elements()
                                 .First(e => e.Name.LocalName == "meanAmount")
                                 .Value;
@@ -349,20 +361,29 @@ namespace EpdToExcel.Core
         }
 
 
-        //private static string GetReferenceFlowUnit(XDocument xml)
-        //{
-        //    var referenceFlowUnits = xml.Root
-        //                               .Elements()
-        //                               .First(e => e.Name.LocalName == "exchanges")
-        //                               .Elements()
-        //                               .First(e => e.Elements().Where(i => i.Name.LocalName == "meanAmount").Count() == 1)
-        //                               .Elements()
-        //                               .First(e => e.Name.LocalName == "referenceToFlowDataSet")
-        //                               .Elements()
-        //                               .Where(e => e.Name.LocalName == "shortDescription");
+        private static string GetReferenceFlowInfo(XDocument xml)
+        {
+            var referenceToReferenceFlow = xml.Root
+                                              .Elements()
+                                              .First(e => e.Name.LocalName == "processInformation")
+                                              .Elements()
+                                              .First(e => e.Name.LocalName == "quantitativeReference")
+                                              .Elements()
+                                              .First(e => e.Name.LocalName == "referenceToReferenceFlow")
+                                              .Value;
 
-        //    return GetStringValueWithLanguagefilter(referenceFlowUnits, "de");
-        //}
+            var referenceFlowUnits = xml.Root
+                                        .Elements()
+                                        .First(e => e.Name.LocalName == "exchanges")
+                                        .Elements()
+                                        .First(e => e.Attribute("dataSetInternalID").Value == referenceToReferenceFlow)
+                                        .Elements()
+                                        .First(e => e.Name.LocalName == "referenceToFlowDataSet")
+                                        .Elements()
+                                        .Where(e => e.Name.LocalName == "shortDescription");
+
+            return GetStringValueWithLanguagefilter(referenceFlowUnits, "de");
+        }
 
 
         private static void InsertValueToExcelCell(ExcelRange range, double? value, Color? color = null)
@@ -447,7 +468,7 @@ namespace EpdToExcel.Core
 
             var indicatorKey = IndicatorKeyNameMapping.Keys.Single(e => e.ToCharArray().Count() == indicatorKeyArray.Count() && Enumerable.SequenceEqual(e.ToCharArray().OrderBy(x => x), indicatorKeyArray.OrderBy(x => x)));
 
-            return new Tuple<string,string>(indicatorKey, IndicatorKeyNameMapping[indicatorKey]);
+            return new Tuple<string, string>(indicatorKey, IndicatorKeyNameMapping[indicatorKey]);
         }
 
 

@@ -25,7 +25,7 @@ namespace EpdToExcel.Core.Models
 
         public string DataSetBaseName { get; set; }
 
-        public double ReferenceFlowInfo { get; set; }
+        public string ReferenceFlowInfo { get; set; }
 
         public double ReferenceFlow { get; set; }
 

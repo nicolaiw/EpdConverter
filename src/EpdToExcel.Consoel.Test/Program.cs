@@ -2,12 +2,10 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Net;
 using System.Runtime.InteropServices;
-using System.Text;
-using System.Threading.Tasks;
 using EpdToExcel.Core;
 using EpdToExcel.Core.Models;
+using C = System.Console;
 
 namespace EpdToExcel.Console.Test
 {
@@ -26,37 +24,37 @@ namespace EpdToExcel.Console.Test
 
         private static void L(string msg, System.ConsoleColor color = ConsoleColor.Green)
         {
-            System.Console.ForegroundColor = color;
-            System.Console.WriteLine(msg + "   " + Environment.NewLine);
-            System.Console.ForegroundColor = ConsoleColor.Gray;
+            C.ForegroundColor = color;
+            C.WriteLine(msg + "   " + Environment.NewLine);
+            C.ForegroundColor = ConsoleColor.Gray;
         }
 
 
         static void Main(string[] args)
         {
-            System.Console.SetWindowSize(System.Console.LargestWindowWidth, System.Console.LargestWindowHeight);
+            C.SetWindowSize(System.Console.LargestWindowWidth, System.Console.LargestWindowHeight);
             ShowWindow(ThisConsole, MAXIMIZE);
 
-            System.Console.Write("Name des Ordners auf dem Desktop: ");
+            C.Write("Name des Ordners auf dem Desktop: ");
             var projectFolder = System.Console.ReadLine();
             var epdFolder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), projectFolder);
 
             while (!Directory.Exists(epdFolder))
             {
                 L($"Ein Ordner mit dem Namen {projectFolder} existiert nicht.", ConsoleColor.Red);
-                System.Console.Write("Bitte anderen Ordner wählen: ");
-                projectFolder = System.Console.ReadLine();
+                C.Write("Bitte anderen Ordner wählen: ");
+                projectFolder = C.ReadLine();
                 epdFolder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), projectFolder);
             }
 
-            System.Console.Write("\nName den das Projekt erhalten soll: ");
-            var projectName = System.Console.ReadLine();
+            C.Write("\nName den das Projekt erhalten soll: ");
+            var projectName = C.ReadLine();
             var projectFile = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), projectName + ".xlsx");
 
             while (File.Exists(projectFile))
             {
                 L($"Ein Projekt mit dem Namen {projectName} existiert bereits", ConsoleColor.Red);
-                System.Console.Write("Bitte neuen Namen vergeben: ");
+                C.Write("Bitte neuen Namen vergeben: ");
                 projectName = System.Console.ReadLine();
                 projectFile = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), projectName + ".xlsx");
             }
@@ -98,7 +96,7 @@ namespace EpdToExcel.Console.Test
                 try
                 {
                     L($"{i + 1}. {epdFiles[i].Name} done.");
-                    epds.Add(EpdToXlsx.GetEpdFromXml(epdFiles[i].FullName, i + 1, selectedIndicators));
+                    epds.Add(EpdToXlsx.GetEpdFromXml(epdFiles[i].FullName, i + 1, selectedIndicators, str => L(str, ConsoleColor.Yellow)));
                 }
                 catch (Exception ex)
                 {
@@ -124,36 +122,36 @@ namespace EpdToExcel.Console.Test
                 L(ex.ToString(), ConsoleColor.Red);
             }
 
-            System.Console.ReadLine();
+            C.ReadLine();
         }
 
 
         private static void ClearCurrentLine(string currentText, bool selected)
         {
             // Clear the emphaziser " <--"
-            System.Console.SetCursorPosition(currentText.Length, System.Console.CursorTop);
-            System.Console.Write(new string(' ', 4));
+            C.SetCursorPosition(currentText.Length, C.CursorTop);
+            C.Write(new string(' ', 4));
 
-            System.Console.SetCursorPosition(0, System.Console.CursorTop);
-            System.Console.ForegroundColor = selected ? ConsoleColor.Cyan : ConsoleColor.Gray;
+            C.SetCursorPosition(0, C.CursorTop);
+            C.ForegroundColor = selected ? ConsoleColor.Cyan : ConsoleColor.Gray;
 
             var adjustedText = currentText.Remove(currentText.Length - 2, 1).Insert(currentText.Length - 2, selected ? "X" : " ");
 
-            System.Console.Write(adjustedText);
-            System.Console.SetCursorPosition(System.Console.CursorLeft - 2, System.Console.CursorTop);
+            C.Write(adjustedText);
+            C.SetCursorPosition(C.CursorLeft - 2, C.CursorTop);
         }
 
 
         private static void EmphaziseCurrentLine(string text, bool selected)
         {
             // Emphazise new line
-            System.Console.SetCursorPosition(0, System.Console.CursorTop);
-            System.Console.ForegroundColor = selected ? ConsoleColor.Cyan : ConsoleColor.Gray;
+            C.SetCursorPosition(0, C.CursorTop);
+            C.ForegroundColor = selected ? ConsoleColor.Cyan : ConsoleColor.Gray;
 
             var adjustedText = text.Remove(text.Length - 2, 1).Insert(text.Length - 2, selected ? "X" : " ");
 
-            System.Console.Write(adjustedText +  " <--");
-            System.Console.SetCursorPosition(System.Console.CursorLeft - 6, System.Console.CursorTop);
+            C.Write(adjustedText +  " <--");
+            C.SetCursorPosition(C.CursorLeft - 6, C.CursorTop);
         }
 
 
@@ -165,13 +163,13 @@ namespace EpdToExcel.Console.Test
 
             foreach (var item in adjustedSelectionList)
             {
-                System.Console.ForegroundColor = ConsoleColor.Cyan;
-                System.Console.WriteLine(item);
+                C.ForegroundColor = ConsoleColor.Cyan;
+                C.WriteLine(item);
             }
 
-            var initialCursorPosTop = System.Console.CursorTop;
+            var initialCursorPosTop = C.CursorTop;
 
-            System.Console.SetCursorPosition(longestEntryLength + 2, initialCursorPosTop - selectionList.Count());
+            C.SetCursorPosition(longestEntryLength + 2, initialCursorPosTop - selectionList.Count());
 
             var selected = new Dictionary<int, bool>();
 
@@ -187,7 +185,7 @@ namespace EpdToExcel.Console.Test
 
             while (true)
             {
-                switch (System.Console.ReadKey(true).Key)
+                switch (C.ReadKey(true).Key)
                 {
                     case ConsoleKey.Spacebar:
 
@@ -196,7 +194,7 @@ namespace EpdToExcel.Console.Test
 
                         EmphaziseCurrentLine(adjustedSelectionList[currentEntry], selected[currentEntry]);
 
-                        System.Console.SetCursorPosition(System.Console.CursorLeft - 1, System.Console.CursorTop);
+                        C.SetCursorPosition(C.CursorLeft - 1, C.CursorTop);
 
                         selectionList[currentEntry].Item2(currentEntry, selected[currentEntry]);
 
@@ -209,12 +207,12 @@ namespace EpdToExcel.Console.Test
                         if (currentEntry + 1 < selectionList.Count)
                         {
                             currentEntry++;
-                            System.Console.SetCursorPosition(0, System.Console.CursorTop + 1);
+                            C.SetCursorPosition(0, C.CursorTop + 1);
                         }
                         else
                         {
                             currentEntry = 0;
-                            System.Console.SetCursorPosition(0, System.Console.CursorTop - (selectionList.Count() - 1));
+                            C.SetCursorPosition(0, C.CursorTop - (selectionList.Count() - 1));
                         }
 
                         EmphaziseCurrentLine(adjustedSelectionList[currentEntry], selected[currentEntry]);
@@ -228,12 +226,12 @@ namespace EpdToExcel.Console.Test
                         if (currentEntry - 1 >= 0)
                         {
                             currentEntry--;
-                            System.Console.SetCursorPosition(System.Console.CursorLeft, System.Console.CursorTop + -1);
+                            C.SetCursorPosition(C.CursorLeft, C.CursorTop + -1);
                         }
                         else
                         {
                             currentEntry = selectionList.Count() - 1;
-                            System.Console.SetCursorPosition(System.Console.CursorLeft, System.Console.CursorTop + currentEntry);
+                            C.SetCursorPosition(C.CursorLeft, C.CursorTop + currentEntry);
                         }
 
                         EmphaziseCurrentLine(adjustedSelectionList[currentEntry], selected[currentEntry]);
@@ -246,11 +244,11 @@ namespace EpdToExcel.Console.Test
 
                         var selectChar = allSelect ? 'X' : ' ';
 
-                        System.Console.SetCursorPosition(System.Console.CursorLeft, System.Console.CursorTop - currentEntry - 1);
+                        C.SetCursorPosition(C.CursorLeft, C.CursorTop - currentEntry - 1);
 
                         for (int i = 0; i < selectionList.Count(); i++)
                         {
-                            System.Console.SetCursorPosition(System.Console.CursorLeft, System.Console.CursorTop + 1);
+                            C.SetCursorPosition(C.CursorLeft, C.CursorTop + 1);
 
                             ClearCurrentLine(adjustedSelectionList[i], allSelect);
 
@@ -258,14 +256,14 @@ namespace EpdToExcel.Console.Test
                             selected[i] = allSelect;
                         }
 
-                        System.Console.SetCursorPosition(System.Console.CursorLeft, System.Console.CursorTop - selectionList.Count() + currentEntry + 1);
+                        C.SetCursorPosition(C.CursorLeft, C.CursorTop - selectionList.Count() + currentEntry + 1);
 
                         EmphaziseCurrentLine(adjustedSelectionList[currentEntry], allSelect);
 
                         break;
                     case ConsoleKey.Enter:
 
-                        System.Console.SetCursorPosition(0, System.Console.CursorTop + (selectionList.Count() - currentEntry));
+                        C.SetCursorPosition(0, C.CursorTop + (selectionList.Count() - currentEntry));
                         return;
                 }
             }

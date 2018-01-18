@@ -7,7 +7,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EpdToExcel.Core", "src\EpdT
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EpdToExcel.UI", "src\EpdToExcel.UI\EpdToExcel.UI.csproj", "{CCF95C8D-4152-417C-ADEF-C5B108EF3170}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EpdToExcel.Console.Test", "src\EpdToExcel.Consoel.Test\EpdToExcel.Console.Test.csproj", "{09C1BCE8-D5DD-4B42-B548-16AD8A67FBA8}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EpdToExcel.Console.Test", "src\EpdToExcel.Console.Test\EpdToExcel.Console.Test.csproj", "{09C1BCE8-D5DD-4B42-B548-16AD8A67FBA8}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

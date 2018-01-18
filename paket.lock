@@ -1,0 +1,4 @@
+NUGET
+  remote: https://api.nuget.org/v3/index.json
+    EPPlus (4.1.1)
+    FAKE (4.64.4)

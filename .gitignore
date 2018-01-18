@@ -20,6 +20,7 @@
 x64/
 x86/
 bld/
+build/
 [Bb]in/
 [Oo]bj/
 [Ll]og/
@@ -257,8 +258,8 @@ typings/
 _Pvt_Extensions
 
 # Paket dependency manager
-.paket/paket.exe
-paket-files/
+#.paket/paket.exe
+#paket-files/
 
 # FAKE - F# Make
 .fake/

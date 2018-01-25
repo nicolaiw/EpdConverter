@@ -22,6 +22,7 @@ namespace EpdToExcel.Core
     public static class EpdToXlsx
     {
         private const string FLOW_DATASET_BASE_URI = "http://www.oekobaudat.de/OEKOBAU.DAT/resource";
+        private static Action<string> L;
 
 
         /************************************************
@@ -33,20 +34,8 @@ namespace EpdToExcel.Core
             // Another possibility would be to use XPath instead of Linq.
             // It's a matter of taste.
 
+            L = log;
             var xml = XDocument.Load(epdXmlPath);
-
-            var meanAmount = GetReferenceFlowMeanAmount(xml);
-            string referenceFlowUnit = string.Empty;
-
-            try
-            {
-                referenceFlowUnit = GetReferenceFlowUnit(xml, meanAmount);
-            }
-            catch(Exception ex)
-            {
-                // TODO: Log ex
-                log("Fetching reference unit failed.");
-            }
 
             var lciResults = xml.Root
                              .Elements()
@@ -58,6 +47,7 @@ namespace EpdToExcel.Core
                               new Epd
                               {
                                   Uuid = GetUuid(xml),
+                                  Uri = GetUri(xml),
                                   Indicator = GetIndicatorKeyValue(lci).Item2,
                                   Direction = GetDirection(lci), // Input or Output
                                   Unit = GetUnit(lci),
@@ -77,8 +67,8 @@ namespace EpdToExcel.Core
                                   WasteDisposalC4 = GetEnviromentalIndicatorValue(lci, "C4"),
                                   ReuseAndRecoveryD = GetEnviromentalIndicatorValue(lci, "D"),
                                   DataSetBaseName = GetDataSetBaseName(xml),
-                                  ReferenceFlow = meanAmount,
-                                  ReferenceFlowUnit = referenceFlowUnit,
+                                  ReferenceFlow = GetReferenceFlowMeanAmount(xml),
+                                  ReferenceFlowUnit = GetReferenceFlowUnit(xml),
                                   ReferenceFlowInfo = GetReferenceFlowInfo(xml),
                                   ProductNumber = productNumber
                               });
@@ -125,7 +115,7 @@ namespace EpdToExcel.Core
                 worksheet.Cells[1, 22].Value = "Referenzfluss - Einheit";
                 worksheet.Cells[1, 23].Value = "Referenzfluss - Info";
                 worksheet.Cells[1, 24].Value = "UUID";
-
+                worksheet.Cells[1, 25].Value = "Ökobaudat - Link";
 
                 /* Add EPDs to Worksheet */
 
@@ -163,13 +153,15 @@ namespace EpdToExcel.Core
                         worksheet.Cells[row, 22].Value = epds.ElementAt(j).ElementAt(i).ReferenceFlowUnit;
                         worksheet.Cells[row, 23].Value = epds.ElementAt(j).ElementAt(i).ReferenceFlowInfo;
                         worksheet.Cells[row, 24].Value = epds.ElementAt(j).ElementAt(i).Uuid;
+                        worksheet.Cells[row, 25].Hyperlink = epds.ElementAt(j).ElementAt(i).Uri;
+                        worksheet.Cells[row, 25].Value = "Link zur EPD";
                     }
 
                     rowOffset += epds.ElementAt(j).Count() + 1;
                 }
 
                 /* Format as Table */
-                using (ExcelRange range = worksheet.Cells[1, 1, rowOffset, 24])
+                using (ExcelRange range = worksheet.Cells[1, 1, rowOffset, 25])
                 {
                     ExcelTable table = worksheet.Tables.Add(range, "EPD-Daten");
                     table.ShowFilter = true;
@@ -179,7 +171,7 @@ namespace EpdToExcel.Core
 
 
                 /* AutoFit */
-                for (int i = 1; i <= 24; i++)
+                for (int i = 1; i <= 25; i++)
                 {
                     worksheet.Column(i).AutoFit();
                 }
@@ -224,116 +216,118 @@ namespace EpdToExcel.Core
             return new Guid(uuidString);
         }
 
-        private static string GetReferenceFlowUnit(XDocument xml, double meanAmount)
+        private static Uri GetUri(XDocument xml)
         {
-            //var tmp = "";
-            //using (var client = new WebClient())
-            //{
-            //    tmp = client.DownloadString(FLOW_DATASET_BASE_URI + "/unitgroups/838aaa22-0117-11db-92e3-0800200c9a66?format=xml");
-            //}
+            // Get the Uuid again: the methodes execution order should not matter meaning
+            // the user of this  methodes should not be forced to first call GetUuid() and THAN use this uuid to create
+            // the url.
 
-            //var tmp = xml.Root
-            //                               .Elements()
-            //                               .First(e => e.Name.LocalName == "quantitativeReference");
+            return new Uri("http://www.oekobaudat.de/OEKOBAU.DAT/datasetdetail/process.xhtml?uuid=" + GetUuid(xml) + "&lang=de");
+        }
 
-            var quantitativeReference = xml.Root
-                                           .Elements()
-                                           .First(e => e.Name.LocalName == "processInformation")
-                                           .Elements()
-                                           .First(e => e.Name.LocalName == "quantitativeReference")
-                                           .Elements()
-                                           .First(e => e.Name.LocalName == "referenceToReferenceFlow")
-                                           .Value
-                                           .Trim();
-
-            var flowRefObjectId = xml.Root
-                                     .Elements()
-                                     .First(e => e.Name.LocalName == "exchanges")
-                                     .Elements()
-                                     .First(e => e.Attribute("dataSetInternalID").Value.Trim() == quantitativeReference)
-                                     .Elements()
-                                     .First(e => e.Name.LocalName == "referenceToFlowDataSet")
-                                     .Attribute("refObjectId")
-                                     .Value
-                                     .Trim();
-
-            string flowDataSetXmlString;
-            using (var client = new WebClient())
+        private static string GetReferenceFlowUnit(XDocument xml)
+        {
+            try
             {
-                client.Encoding = Encoding.UTF8;
-                flowDataSetXmlString = client.DownloadString(FLOW_DATASET_BASE_URI + "/flows/" + flowRefObjectId + "?format=xml");
-            }
+                var quantitativeReference = xml.Root
+                                               .Elements()
+                                               .First(e => e.Name.LocalName == "processInformation")
+                                               .Elements()
+                                               .First(e => e.Name.LocalName == "quantitativeReference")
+                                               .Elements()
+                                               .First(e => e.Name.LocalName == "referenceToReferenceFlow")
+                                               .Value
+                                               .Trim();
 
-            var flowPropertiesRefObjectId = XDocument.Parse(flowDataSetXmlString)
-                                             .Root
-                                             .Elements()
-                                             .First(e => e.Name.LocalName == "flowProperties")
-                                             .Elements()
-                                             .First(e => e.Attributes().Any(a => a.Name.LocalName == "dataSetInternalID" && a.Value == "0"))
-                                             .Elements()
-                                             .First(e => e.Name.LocalName == "referenceToFlowPropertyDataSet")
-                                             .Attribute("refObjectId")
-                                             .Value
-                                             .Trim();
-
-            string flowPropertiesXmlString;
-            using (var client = new WebClient())
-            {
-                client.Encoding = Encoding.UTF8;
-                flowPropertiesXmlString = client.DownloadString(FLOW_DATASET_BASE_URI + "/flowproperties/" + flowPropertiesRefObjectId + "?format=xml");
-            }
-
-            var unitGroupRefObjectId = XDocument.Parse(flowPropertiesXmlString)
-                                         .Root
+                var flowRefObjectId = xml.Root
                                          .Elements()
-                                         .First(e => e.Name.LocalName == "flowPropertiesInformation")
+                                         .First(e => e.Name.LocalName == "exchanges")
                                          .Elements()
-                                         .First(e => e.Name.LocalName == "quantitativeReference")
+                                         .First(e => e.Attribute("dataSetInternalID").Value.Trim() == quantitativeReference)
                                          .Elements()
-                                         .First(e => e.Name.LocalName == "referenceToReferenceUnitGroup")
+                                         .First(e => e.Name.LocalName == "referenceToFlowDataSet")
                                          .Attribute("refObjectId")
                                          .Value
                                          .Trim();
 
-            string unitGroupXmlString;
-            using (var client = new WebClient())
-            {
-                client.Encoding = Encoding.UTF8;
-                unitGroupXmlString = client.DownloadString(FLOW_DATASET_BASE_URI + "/unitgroups/" + unitGroupRefObjectId + " ?format=xml");
-            }
+                string flowDataSetXmlString;
+                using (var client = new WebClient())
+                {
+                    client.Encoding = Encoding.UTF8;
+                    flowDataSetXmlString = client.DownloadString(FLOW_DATASET_BASE_URI + "/flows/" + flowRefObjectId + "?format=xml");
+                }
 
-            var referenceToReferenceUnit = XDocument.Parse(unitGroupXmlString)
-                                                    .Root
-                                                    .Elements()
-                                                    .First(e => e.Name.LocalName == "unitGroupInformation")
-                                                    .Elements()
-                                                    .First(e => e.Name.LocalName == "quantitativeReference")
-                                                    .Elements()
-                                                    .First(e => e.Name.LocalName == "referenceToReferenceUnit")
-                                                    .Value;
+                var flowPropertiesRefObjectId = XDocument.Parse(flowDataSetXmlString)
+                                                 .Root
+                                                 .Elements()
+                                                 .First(e => e.Name.LocalName == "flowProperties")
+                                                 .Elements()
+                                                 .First(e => e.Attributes().Any(a => a.Name.LocalName == "dataSetInternalID" && a.Value == "0"))
+                                                 .Elements()
+                                                 .First(e => e.Name.LocalName == "referenceToFlowPropertyDataSet")
+                                                 .Attribute("refObjectId")
+                                                 .Value
+                                                 .Trim();
 
-            var referenceUnitNode = XDocument.Parse(unitGroupXmlString)
+                string flowPropertiesXmlString;
+                using (var client = new WebClient())
+                {
+                    client.Encoding = Encoding.UTF8;
+                    flowPropertiesXmlString = client.DownloadString(FLOW_DATASET_BASE_URI + "/flowproperties/" + flowPropertiesRefObjectId + "?format=xml");
+                }
+
+                var unitGroupRefObjectId = XDocument.Parse(flowPropertiesXmlString)
                                              .Root
                                              .Elements()
-                                             .First(e => e.Name.LocalName == "units")
+                                             .First(e => e.Name.LocalName == "flowPropertiesInformation")
                                              .Elements()
-                                             .First(e => e.Attributes().Any(a => a.Name == "dataSetInternalID" && a.Value == referenceToReferenceUnit))
-                                             .Elements();
+                                             .First(e => e.Name.LocalName == "quantitativeReference")
+                                             .Elements()
+                                             .First(e => e.Name.LocalName == "referenceToReferenceUnitGroup")
+                                             .Attribute("refObjectId")
+                                             .Value
+                                             .Trim();
 
-            var referenceUnitName = referenceUnitNode.First(e => e.Name.LocalName == "name")
-                                                     .Value;
+                string unitGroupXmlString;
+                using (var client = new WebClient())
+                {
+                    client.Encoding = Encoding.UTF8;
+                    unitGroupXmlString = client.DownloadString(FLOW_DATASET_BASE_URI + "/unitgroups/" + unitGroupRefObjectId + " ?format=xml");
+                }
 
-            // Check if the meanValue is the same as the parsed meanAmount from the EPD
-            var meanValue = referenceUnitNode.First(e => e.Name.LocalName == "meanValue")
-                                             .Value;
+                var referenceToReferenceUnit = XDocument.Parse(unitGroupXmlString)
+                                                        .Root
+                                                        .Elements()
+                                                        .First(e => e.Name.LocalName == "unitGroupInformation")
+                                                        .Elements()
+                                                        .First(e => e.Name.LocalName == "quantitativeReference")
+                                                        .Elements()
+                                                        .First(e => e.Name.LocalName == "referenceToReferenceUnit")
+                                                        .Value;
 
-            if (meanAmount != double.Parse(meanValue, CultureInfo.InvariantCulture))
-            {
-                // TODO: Include more informations (e.g. UUID)
-                throw new Exception("meanAmount from EPD != meanValue from referenceUnit");
+                var referenceUnitNode = XDocument.Parse(unitGroupXmlString)
+                                                 .Root
+                                                 .Elements()
+                                                 .First(e => e.Name.LocalName == "units")
+                                                 .Elements()
+                                                 .First(e => e.Attributes().Any(a => a.Name == "dataSetInternalID" && a.Value == referenceToReferenceUnit))
+                                                 .Elements();
+
+                var referenceUnitName = referenceUnitNode.First(e => e.Name.LocalName == "name")
+                                                         .Value;
+
+                // Check if the meanValue is the same as the parsed meanAmount from the EPD
+                var meanValue = referenceUnitNode.First(e => e.Name.LocalName == "meanValue")
+                                                 .Value;
+
+                return referenceUnitName;
             }
-
-            return referenceUnitName;
+            catch (Exception ex)
+            {
+                // TODO: Log ex or just throw an Exception with the message below
+                L("Fetching reference unit failed.");
+                return string.Empty;
+            }
         }
 
         private static double GetReferenceFlowMeanAmount(XDocument xml)

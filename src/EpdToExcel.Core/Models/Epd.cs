@@ -17,6 +17,8 @@ namespace EpdToExcel.Core.Models
 
         public Guid Uuid { get; set; }
 
+        public Uri Uri { get; set; }
+
         public string Indicator { get; set; }
 
         public string Direction { get; set; }

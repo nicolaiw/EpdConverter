@@ -24,19 +24,19 @@ Target "Clean" (fun _ ->
 )
 
 Target "SetVersions" (fun _ ->
-    CreateCSharpAssemblyInfo "./src/app/Calculator/Properties/AssemblyInfo.cs"
-        [Attribute.Title "Calculator Command line tool"
-         Attribute.Description "Sample project for FAKE - F# MAKE"
-         Attribute.Guid "A539B42C-CB9F-4a23-8E57-AF4E7CEE5BAA"
-         Attribute.Product "Calculator"
+    CreateCSharpAssemblyInfo "./src/app/EpdToExcel.Core/Properties/AssemblyInfo.cs"
+        [Attribute.Title "EpdToExcel.Core"
+         Attribute.Description "Epd to Excel converter"
+         Attribute.Guid "4daa8a08-9b1e-42e6-b2a3-8bb8a7f71199"
+         Attribute.Product "EpdToExcel.Core"
          Attribute.Version version
          Attribute.FileVersion version]
 
-    CreateCSharpAssemblyInfo "./src/app/CalculatorLib/Properties/AssemblyInfo.cs"
-        [Attribute.Title "Calculator library"
-         Attribute.Description "Sample project for FAKE - F# MAKE"
-         Attribute.Guid "EE5621DB-B86B-44eb-987F-9C94BCC98441"
-         Attribute.Product "Calculator"
+    CreateCSharpAssemblyInfo "./src/app/EpdToExcel.Console.Test/Properties/AssemblyInfo.cs"
+        [Attribute.Title "EpdToExcel.Console.Test"
+         Attribute.Description "EpdToExcel.Console.Test"
+         Attribute.Guid "09c1bce8-d5dd-4b42-b548-16ad8a67fba8"
+         Attribute.Product "EpdToExcel.Console.Test"
          Attribute.Version version
          Attribute.FileVersion version]
 )

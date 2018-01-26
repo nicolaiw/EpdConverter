@@ -26,7 +26,7 @@ namespace EpdToExcel.Console.Test
         private const int MINIMIZE = 6;
         private const int RESTORE = 9;
         private static object _logLock = new object();
-        private const int MAX_CONCURRENT_WEB_CALLS = 100;
+        private const int MAX_CONCURRENT_WEB_CALLS = 64;
 
         private static void L(string msg, System.ConsoleColor color = ConsoleColor.Green)
         {

@@ -2,10 +2,13 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Net;
 using System.Runtime.InteropServices;
+using System.Threading.Tasks;
 using EpdToExcel.Core;
 using EpdToExcel.Core.Models;
 using C = System.Console;
+
 
 namespace EpdToExcel.Console.Test
 {
@@ -14,29 +17,37 @@ namespace EpdToExcel.Console.Test
         [DllImport("kernel32.dll", ExactSpelling = true)]
         private static extern IntPtr GetConsoleWindow();
         private static IntPtr ThisConsole = GetConsoleWindow();
+
         [DllImport("user32.dll", CharSet = CharSet.Auto, SetLastError = true)]
         private static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
+
         private const int HIDE = 0;
         private const int MAXIMIZE = 3;
         private const int MINIMIZE = 6;
         private const int RESTORE = 9;
-
+        private static object _logLock = new object();
+        private const int MAX_CONCURRENT_WEB_CALLS = 100;
 
         private static void L(string msg, System.ConsoleColor color = ConsoleColor.Green)
         {
-            C.ForegroundColor = color;
-            C.WriteLine(msg + "   " + Environment.NewLine);
-            C.ForegroundColor = ConsoleColor.Gray;
+            lock (_logLock)
+            {
+                C.ForegroundColor = color;
+                C.WriteLine(msg + "   " + Environment.NewLine);
+                C.ForegroundColor = ConsoleColor.Gray;
+            }
         }
 
-
-        static void Main(string[] args)
+        static async Task Main(string[] args)
         {
-            C.SetWindowSize(System.Console.LargestWindowWidth, System.Console.LargestWindowHeight);
+            ServicePointManager.DefaultConnectionLimit = 10000;
+            ServicePointManager.Expect100Continue = false;
+
+            C.SetWindowSize(C.LargestWindowWidth, C.LargestWindowHeight);
             ShowWindow(ThisConsole, MAXIMIZE);
 
             C.Write("Name des Ordners auf dem Desktop: ");
-            var projectFolder = System.Console.ReadLine();
+            var projectFolder = C.ReadLine();
             var epdFolder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), projectFolder);
 
             while (!Directory.Exists(epdFolder))
@@ -55,7 +66,7 @@ namespace EpdToExcel.Console.Test
             {
                 L($"Ein Projekt mit dem Namen {projectName} existiert bereits", ConsoleColor.Red);
                 C.Write("Bitte neuen Namen vergeben: ");
-                projectName = System.Console.ReadLine();
+                projectName = C.ReadLine();
                 projectFile = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), projectName + ".xlsx");
             }
 
@@ -90,29 +101,42 @@ namespace EpdToExcel.Console.Test
 
             L("Start importing ...");
 
-            List<IEnumerable<Epd>> epds = new List<IEnumerable<Epd>>();
+            var taskList = new List<Task<List<Epd>>>();
             for (int i = 0; i < epdFiles.Count(); i++)
             {
                 try
                 {
-                    L($"{i + 1}. {epdFiles[i].Name} done.");
-                    epds.Add(EpdToXlsx.GetEpdFromXml(epdFiles[i].FullName, i + 1, selectedIndicators, str => L(str, ConsoleColor.Yellow)));
+                    var tmp = i;
+
+                    var task = new Task<List<Epd>>(() =>
+                    {
+                        var res = EpdToXlsx.GetEpdFromXml(epdFiles[tmp].FullName, tmp + 1, selectedIndicators, str => L(str, ConsoleColor.Yellow)).ToList();
+                        L($"{tmp + 1}. {epdFiles[tmp].Name} done.");
+                        return res;
+                    });
+                        
+
+                    taskList.Add(task);
                 }
                 catch (Exception ex)
                 {
                     L($"Import failed: {epdFiles[i].Name}.", ConsoleColor.Red);
                     L(ex.ToString(), ConsoleColor.Red);
 
-                    System.Console.ReadLine();
+                    C.ReadLine();
                     L("Press any key to continue.", ConsoleColor.Cyan);
                 }
             }
+
+            var epds = await taskList.ForEachAsyncThrottled(MAX_CONCURRENT_WEB_CALLS);
+
+            epds.OrderBy(e => e.First().ProductNumber);
 
             try
             {
                 L("Start exporting ...");
                 L("This may take a while. Please wait ...");
-                EpdToXlsx.ExportEpdsToXlsx(epds, projectFile);
+                EpdToXlsx.ExportEpdsToXlsx(epds.ToList(), projectFile);
                 L("Export succeeded.");
                 L("Press any key to close this window.", ConsoleColor.White);
             }
@@ -150,7 +174,7 @@ namespace EpdToExcel.Console.Test
 
             var adjustedText = text.Remove(text.Length - 2, 1).Insert(text.Length - 2, selected ? "X" : " ");
 
-            C.Write(adjustedText +  " <--");
+            C.Write(adjustedText + " <--");
             C.SetCursorPosition(C.CursorLeft - 6, C.CursorTop);
         }
 

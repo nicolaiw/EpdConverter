@@ -37,6 +37,13 @@ namespace EpdToExcel.Core
             L = log;
             var xml = XDocument.Load(epdXmlPath);
 
+            var uuid = GetUuid(xml);
+            var uri = GetUri(xml);
+            var datasetBaseName = GetDataSetBaseName(xml);
+            var referenceUnit = GetReferenceFlowUnit(xml);
+            var referenceFlowInfo = GetReferenceFlowInfo(xml);
+            var referenceFlow = GetReferenceFlowMeanAmount(xml);
+
             var lciResults = xml.Root
                              .Elements()
                              .Where(e => e.Name.LocalName == "exchanges" || e.Name.LocalName == "LCIAResults")
@@ -46,8 +53,8 @@ namespace EpdToExcel.Core
                              .Select(lci =>
                               new Epd
                               {
-                                  Uuid = GetUuid(xml),
-                                  Uri = GetUri(xml),
+                                  Uuid = uuid,
+                                  Uri = uri,
                                   Indicator = GetIndicatorKeyValue(lci).Item2,
                                   Direction = GetDirection(lci), // Input or Output
                                   Unit = GetUnit(lci),
@@ -66,14 +73,15 @@ namespace EpdToExcel.Core
                                   WasteManagementC3 = GetEnviromentalIndicatorValue(lci, "C3"),
                                   WasteDisposalC4 = GetEnviromentalIndicatorValue(lci, "C4"),
                                   ReuseAndRecoveryD = GetEnviromentalIndicatorValue(lci, "D"),
-                                  DataSetBaseName = GetDataSetBaseName(xml),
-                                  ReferenceFlow = GetReferenceFlowMeanAmount(xml),
-                                  ReferenceFlowUnit = GetReferenceFlowUnit(xml),
-                                  ReferenceFlowInfo = GetReferenceFlowInfo(xml),
+                                  DataSetBaseName = datasetBaseName,
+                                  ReferenceFlow = referenceFlow,
+                                  ReferenceFlowUnit = referenceUnit,
+                                  ReferenceFlowInfo = referenceFlowInfo,
                                   ProductNumber = productNumber
                               });
+             
 
-            return lciResults.ToList();
+            return lciResults;
         }
 
 
@@ -225,8 +233,14 @@ namespace EpdToExcel.Core
             return new Uri("http://www.oekobaudat.de/OEKOBAU.DAT/datasetdetail/process.xhtml?uuid=" + GetUuid(xml) + "&lang=de");
         }
 
+        //public static void Bind<T>(Func<T> input, Action<T> rest)
+        //{
+        //    ThreadPool.QueueUserWorkItem(new WaitCallback((obj) => rest(input())));
+        //}
+
         private static string GetReferenceFlowUnit(XDocument xml)
         {
+
             try
             {
                 var quantitativeReference = xml.Root
@@ -325,7 +339,7 @@ namespace EpdToExcel.Core
             catch (Exception ex)
             {
                 // TODO: Log ex or just throw an Exception with the message below
-                L("Fetching reference unit failed.");
+                L(GetUuid(xml) + ". Fetching reference unit failed.\n" + ex.ToString());
                 return string.Empty;
             }
         }
@@ -340,7 +354,6 @@ namespace EpdToExcel.Core
                                 .Elements()
                                 .First(e => e.Name.LocalName == "referenceToReferenceFlow")
                                 .Value;
-
 
             var meanAmount = xml.Root
                                 .Elements()

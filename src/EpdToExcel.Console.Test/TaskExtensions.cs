@@ -35,6 +35,7 @@ namespace EpdToExcel.Console.Test
                 // otherwise there is a potential race condition where the throttler's using block is exited before some Tasks have had their "post"
                 // action completed, which references the throttler, resulting in an exception due to accessing a disposed object.
                 var res = await Task.WhenAll(tasks);
+                await Task.WhenAll(postTaskTasks);
 
                 return res;
             }

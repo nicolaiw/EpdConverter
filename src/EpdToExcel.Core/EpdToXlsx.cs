@@ -137,35 +137,35 @@ namespace EpdToExcel.Core
                     {
                         var row = i + 2 + rowOffset;
 
-                        worksheet.Cells[row, 1].Value = epds.ElementAt(j).ElementAt(i).Indicator;
-                        worksheet.Cells[row, 2].Value = epds.ElementAt(j).ElementAt(i).Direction;
-                        worksheet.Cells[row, 3].Value = epds.ElementAt(j).ElementAt(i).Unit;
-                        InsertValueToExcelCell(worksheet.Cells[row, 4], epds.ElementAt(j).ElementAt(i).ProductionA1ToA3);
-                        InsertValueToExcelCell(worksheet.Cells[row, 5], epds.ElementAt(j).ElementAt(i).TransportA4);
-                        InsertValueToExcelCell(worksheet.Cells[row, 6], epds.ElementAt(j).ElementAt(i).BuildingProcessA5);
-                        InsertValueToExcelCell(worksheet.Cells[row, 7], epds.ElementAt(j).ElementAt(i).UsageB1);
-                        InsertValueToExcelCell(worksheet.Cells[row, 8], epds.ElementAt(j).ElementAt(i).MaintenanceB2);
-                        InsertValueToExcelCell(worksheet.Cells[row, 9], epds.ElementAt(j).ElementAt(i).RepairB3);
-                        InsertValueToExcelCell(worksheet.Cells[row, 10], epds.ElementAt(j).ElementAt(i).ReplacementB4);
-                        InsertValueToExcelCell(worksheet.Cells[row, 11], epds.ElementAt(j).ElementAt(i).ModernizationB5);
-                        InsertValueToExcelCell(worksheet.Cells[row, 12], epds.ElementAt(j).ElementAt(i).EnergyDemandB6, Color.FromArgb(255, 102, 0));
-                        InsertValueToExcelCell(worksheet.Cells[row, 13], epds.ElementAt(j).ElementAt(i).WaterDemandB7, Color.FromArgb(255, 102, 0));
-                        InsertValueToExcelCell(worksheet.Cells[row, 14], epds.ElementAt(j).ElementAt(i).BreakUpC1);
-                        InsertValueToExcelCell(worksheet.Cells[row, 15], epds.ElementAt(j).ElementAt(i).TransportC2);
-                        InsertValueToExcelCell(worksheet.Cells[row, 16], epds.ElementAt(j).ElementAt(i).WasteManagementC3);
-                        InsertValueToExcelCell(worksheet.Cells[row, 17], epds.ElementAt(j).ElementAt(i).WasteDisposalC4);
-                        InsertValueToExcelCell(worksheet.Cells[row, 18], epds.ElementAt(j).ElementAt(i).ReuseAndRecoveryD);
-                        worksheet.Cells[row, 19].Value = epds.ElementAt(j).ElementAt(i).DataSetBaseName;
-                        worksheet.Cells[row, 20].Value = epds.ElementAt(j).ElementAt(i).ProductNumber;
-                        worksheet.Cells[row, 21].Value = epds.ElementAt(j).ElementAt(i).ReferenceFlow;
-                        worksheet.Cells[row, 22].Value = epds.ElementAt(j).ElementAt(i).ReferenceFlowUnit;
-                        worksheet.Cells[row, 23].Value = epds.ElementAt(j).ElementAt(i).ReferenceFlowInfo;
-                        worksheet.Cells[row, 24].Value = epds.ElementAt(j).ElementAt(i).Uuid;
-                        worksheet.Cells[row, 25].Hyperlink = epds.ElementAt(j).ElementAt(i).Uri;
+                        worksheet.Cells[row, 1].Value = sortedEpds[i].Indicator;
+                        worksheet.Cells[row, 2].Value = sortedEpds[i].Direction;
+                        worksheet.Cells[row, 3].Value = sortedEpds[i].Unit;
+                        InsertValueToExcelCell(worksheet.Cells[row, 4], sortedEpds[i].ProductionA1ToA3);
+                        InsertValueToExcelCell(worksheet.Cells[row, 5], sortedEpds[i].TransportA4);
+                        InsertValueToExcelCell(worksheet.Cells[row, 6], sortedEpds[i].BuildingProcessA5);
+                        InsertValueToExcelCell(worksheet.Cells[row, 7], sortedEpds[i].UsageB1);
+                        InsertValueToExcelCell(worksheet.Cells[row, 8], sortedEpds[i].MaintenanceB2);
+                        InsertValueToExcelCell(worksheet.Cells[row, 9], sortedEpds[i].RepairB3);
+                        InsertValueToExcelCell(worksheet.Cells[row, 10], sortedEpds[i].ReplacementB4);
+                        InsertValueToExcelCell(worksheet.Cells[row, 11], sortedEpds[i].ModernizationB5);
+                        InsertValueToExcelCell(worksheet.Cells[row, 12], sortedEpds[i].EnergyDemandB6, Color.FromArgb(255, 102, 0));
+                        InsertValueToExcelCell(worksheet.Cells[row, 13], sortedEpds[i].WaterDemandB7, Color.FromArgb(255, 102, 0));
+                        InsertValueToExcelCell(worksheet.Cells[row, 14], sortedEpds[i].BreakUpC1);
+                        InsertValueToExcelCell(worksheet.Cells[row, 15], sortedEpds[i].TransportC2);
+                        InsertValueToExcelCell(worksheet.Cells[row, 16], sortedEpds[i].WasteManagementC3);
+                        InsertValueToExcelCell(worksheet.Cells[row, 17], sortedEpds[i].WasteDisposalC4);
+                        InsertValueToExcelCell(worksheet.Cells[row, 18], sortedEpds[i].ReuseAndRecoveryD);
+                        worksheet.Cells[row, 19].Value = sortedEpds[i].DataSetBaseName;
+                        worksheet.Cells[row, 20].Value = sortedEpds[i].ProductNumber;
+                        worksheet.Cells[row, 21].Value = sortedEpds[i].ReferenceFlow;
+                        worksheet.Cells[row, 22].Value = sortedEpds[i].ReferenceFlowUnit;
+                        worksheet.Cells[row, 23].Value = sortedEpds[i].ReferenceFlowInfo;
+                        worksheet.Cells[row, 24].Value = sortedEpds[i].Uuid;
+                        worksheet.Cells[row, 25].Hyperlink = sortedEpds[i].Uri;
                         worksheet.Cells[row, 25].Value = "Link zur EPD";
                     }
 
-                    rowOffset += epds.ElementAt(j).Count() + 1;
+                    rowOffset += sortedEpds.Count() + 1;
                 }
 
                 /* Format as Table */

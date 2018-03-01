@@ -72,6 +72,7 @@ namespace EpdConverter.Core.EpdImport
             return lciResults;
         }
 
+
         /************************************************
                            Privates
        ************************************************/
@@ -108,7 +109,7 @@ namespace EpdConverter.Core.EpdImport
         private Uri GetUri(XDocument xml)
         {
             // Get the Uuid again: the methodes execution order should not matter meaning
-            // the user of this  methodes should not be forced to first call GetUuid() and THAN use this uuid to create
+            // the user of this methodes should not be forced to first call GetUuid() and THAN use this uuid to create
             // the url.
 
             return new Uri("http://www.oekobaudat.de/OEKOBAU.DAT/datasetdetail/process.xhtml?uuid=" + GetUuid(xml) + "&lang=de");
@@ -116,7 +117,7 @@ namespace EpdConverter.Core.EpdImport
 
         private string GetReferenceFlowUnit(XDocument xml)
         {
-
+            // TODO: Reuse the WebClient()
             try
             {
                 var quantitativeReference = xml.Root
@@ -214,7 +215,7 @@ namespace EpdConverter.Core.EpdImport
             }
             catch (Exception ex)
             {
-                // TODO: Log ex or just throw an Exception with the message below
+                // TODO: Log ex or just throw an Exception with the message below.
                 L(GetUuid(xml) + ". Fetching reference unit failed.\n" + ex.ToString());
                 return string.Empty;
             }
@@ -281,7 +282,7 @@ namespace EpdConverter.Core.EpdImport
                                 .Elements()
                                 .Where(e => e.Name.LocalName == "shortDescription");
 
-            var indicator = GetStringValueWithLanguagefilter(indicators, "de"); // not realy necessary to get the "de" entry
+            var indicator = GetStringValueWithLanguagefilter(indicators, "de"); // Not realy necessary to get the "de" entry
 
             var indicatorKeyArray = indicator.Split(' ')
                                              .Last()
@@ -289,8 +290,10 @@ namespace EpdConverter.Core.EpdImport
                                              .Replace(")", string.Empty)
                                              .ToCharArray();
 
-            // Die Ökobaudat hat Buchstabendreher in dern Indikatornamen
-            // Daher wird die Reihenfolge der Buchstaben vernachlässigt
+            /* 
+                Several letters of the indicatornames of the Ökübau.dat EPD's are reversed.
+                Therefore we neglect the order of the letters.
+            */
 
             var indicatorKey = Constants.INDICATOR_KEY_NAME_MAPPING.Keys.Single(e => e.ToCharArray().Count() == indicatorKeyArray.Count() && Enumerable.SequenceEqual(e.ToCharArray().OrderBy(x => x), indicatorKeyArray.OrderBy(x => x)));
 

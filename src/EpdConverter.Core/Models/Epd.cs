@@ -1,10 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
-namespace EpdToExcel.Core.Models
+namespace EpdConverter.Core.Models
 {
     // TODO: Encapsulation -> private setters
     public class Epd

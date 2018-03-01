@@ -1,11 +1,7 @@
-﻿using EpdToExcel.Core.Models;
-using System;
+﻿using EpdConverter.Core.Models;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
-namespace EpdToExcel.Core
+namespace EpdConverter.Core.EpdImport
 {
     public interface IEpdImport
     {
@@ -13,6 +9,7 @@ namespace EpdToExcel.Core
         /// Imports Epd datasets from a given path.
         /// </summary>
         /// <param name="path">A Filesystem path, an Url or some other path</param>
+        /// <param name="indicatorFilter"></param>
         /// <returns></returns>
         IEnumerable<Epd> GetEpd(string path);
     }

@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace EpdToExcel.Console.Test
+namespace EpdConverter.Console.Test
 {
     public static class TaskExtensions
     {

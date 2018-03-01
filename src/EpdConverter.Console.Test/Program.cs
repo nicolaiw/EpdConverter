@@ -5,12 +5,12 @@ using System.Linq;
 using System.Net;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
-using EpdToExcel.Core;
-using EpdToExcel.Core.Models;
+using EpdConverter.Core;
+using EpdConverter.Core.Models;
 using C = System.Console;
 
 
-namespace EpdToExcel.Console.Test
+namespace EpdConverter.Console.Test
 {
     class Program
     {
@@ -28,6 +28,7 @@ namespace EpdToExcel.Console.Test
         private static object _logLock = new object();
         private const int MAX_CONCURRENT_WEB_CALLS = 64;
 
+
         private static void L(string msg, System.ConsoleColor color = ConsoleColor.Green)
         {
             lock (_logLock)
@@ -37,6 +38,7 @@ namespace EpdToExcel.Console.Test
                 C.ForegroundColor = ConsoleColor.Gray;
             }
         }
+
 
         static async Task Main(string[] args)
         {
@@ -75,16 +77,16 @@ namespace EpdToExcel.Console.Test
 
             var indicatorMenu = new List<Tuple<string, Action<int, bool>>>();
             var selectedIndicators = new List<string>();
-            var indicators = EpdToXlsx.IndicatorKeyNameMapping.Values.ToList();
+            var indicators = Constants.INDICATOR_KEY_NAME_MAPPING.Values.ToList();
 
             for (var i = 0; i < indicators.Count(); i++)
             {
-                selectedIndicators.Add(EpdToXlsx.IndicatorKeyNameMapping.Keys.ElementAt(i));
+                selectedIndicators.Add(Constants.INDICATOR_KEY_NAME_MAPPING.Keys.ElementAt(i));
 
                 indicatorMenu.Add(
                     new Tuple<string, Action<int, bool>>(indicators[i], (index, selected) =>
                     {
-                        var epdKey = EpdToXlsx.IndicatorKeyNameMapping.Keys.ElementAt(index);
+                        var epdKey = Constants.INDICATOR_KEY_NAME_MAPPING.Keys.ElementAt(index);
                         selectedIndicators.Remove(epdKey);
                         if (selected)
                         {
@@ -110,11 +112,12 @@ namespace EpdToExcel.Console.Test
 
                     var task = new Task<List<Epd>>(() =>
                     {
-                        var res = EpdToXlsx.GetEpdFromXml(epdFiles[tmp].FullName, tmp + 1, selectedIndicators, str => L(str, ConsoleColor.Yellow)).ToList();
+                        var res = EpdConvert.ImportEpdFromFile(epdFiles[tmp].FullName, tmp + 1, selectedIndicators, str => L(str, ConsoleColor.Yellow)).ToList();
+
                         L($"{tmp + 1}. {epdFiles[tmp].Name} done.");
+
                         return res;
                     });
-                        
 
                     taskList.Add(task);
                 }
@@ -123,7 +126,7 @@ namespace EpdToExcel.Console.Test
                     L($"Import failed: {epdFiles[i].Name}.", ConsoleColor.Red);
                     L(ex.ToString(), ConsoleColor.Red);
 
-                    C.ReadLine();
+                    C.ReadKey();
                     L("Press any key to continue.", ConsoleColor.Cyan);
                 }
             }
@@ -136,7 +139,9 @@ namespace EpdToExcel.Console.Test
             {
                 L("Start exporting ...");
                 L("This may take a while. Please wait ...");
-                EpdToXlsx.ExportEpdsToXlsx(epds.ToList(), projectFile);
+
+                EpdConvert.ExportEpdToExcel(projectFile, epds.ToList());
+
                 L("Export succeeded.");
                 L("Press any key to close this window.", ConsoleColor.White);
             }

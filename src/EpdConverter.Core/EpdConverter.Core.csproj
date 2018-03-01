@@ -7,8 +7,8 @@
     <ProjectGuid>{4DAA8A08-9B1E-42E6-B2A3-8BB8A7F71199}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>EpdToExcel.Core</RootNamespace>
-    <AssemblyName>EpdToExcel.Core</AssemblyName>
+    <RootNamespace>EpdConverter.Core</RootNamespace>
+    <AssemblyName>EpdConverter.Core</AssemblyName>
     <TargetFrameworkVersion>v4.7.1</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <TargetFrameworkProfile />
@@ -48,9 +48,12 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="EpdToXlsx.cs" />
-    <Compile Include="IEpdExport.cs" />
-    <Compile Include="IEpdImport.cs" />
+    <Compile Include="Constants.cs" />
+    <Compile Include="EpdConvert.cs" />
+    <Compile Include="EpdImport\EpdFileImport.cs" />
+    <Compile Include="EpdExport\EpdToXlsx.cs" />
+    <Compile Include="EpdExport\IEpdExport.cs" />
+    <Compile Include="EpdImport\IEpdImport.cs" />
     <Compile Include="Models\Epd.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>

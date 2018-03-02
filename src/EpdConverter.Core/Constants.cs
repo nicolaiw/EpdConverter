@@ -14,7 +14,7 @@ namespace EpdConverter.Core
         public const string FLOW_DATASET_BASE_URI = "http://www.oekobaudat.de/OEKOBAU.DAT/resource";
 
         /// <summary>
-        /// ILCA Indocators.
+        /// ILCA Indicators.
         /// </summary>
         public static readonly Dictionary<string, string> INDICATOR_KEY_NAME_MAPPING = new Dictionary<string, string>
         {

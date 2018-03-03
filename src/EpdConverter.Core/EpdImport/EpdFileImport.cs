@@ -22,7 +22,7 @@ namespace EpdConverter.Core.EpdImport
             L = log;
         }
 
-        public IEnumerable<Epd> GetEpd(string path)
+        public Epd GetEpd(string path)
         {
             var xml = XDocument.Load(path);
 
@@ -40,36 +40,51 @@ namespace EpdConverter.Core.EpdImport
                              .Where(e => e.Elements().Any(n => n.Name.LocalName == "other"))  // Skip reference data flow
                              .Where(lci => _indicatorFilter.Contains(GetIndicatorKeyValue(lci).Item1))
                              .Select(lci =>
-                              new Epd
                               {
-                                  Uuid = uuid,
-                                  Uri = uri,
-                                  Indicator = GetIndicatorKeyValue(lci).Item2,
-                                  Direction = GetDirection(lci), // Input or Output
-                                  Unit = GetUnit(lci),
-                                  ProductionA1ToA3 = GetEnviromentalIndicatorValueA1ToA3(lci), // A1 - A3 Special case
-                                  TransportA4 = GetEnviromentalIndicatorValue(lci, "A4"),
-                                  BuildingProcessA5 = GetEnviromentalIndicatorValue(lci, "A5"),
-                                  UsageB1 = GetEnviromentalIndicatorValue(lci, "B1"),
-                                  MaintenanceB2 = GetEnviromentalIndicatorValue(lci, "B2"),
-                                  RepairB3 = GetEnviromentalIndicatorValue(lci, "B3"),
-                                  ReplacementB4 = GetEnviromentalIndicatorValue(lci, "B4"),
-                                  ModernizationB5 = GetEnviromentalIndicatorValue(lci, "B5"),
-                                  EnergyDemandB6 = GetEnviromentalIndicatorValue(lci, "B6"),
-                                  WaterDemandB7 = GetEnviromentalIndicatorValue(lci, "B7"),
-                                  BreakUpC1 = GetEnviromentalIndicatorValue(lci, "C1"),
-                                  TransportC2 = GetEnviromentalIndicatorValue(lci, "C2"),
-                                  WasteManagementC3 = GetEnviromentalIndicatorValue(lci, "C3"),
-                                  WasteDisposalC4 = GetEnviromentalIndicatorValue(lci, "C4"),
-                                  ReuseAndRecoveryD = GetEnviromentalIndicatorValue(lci, "D"),
-                                  DataSetBaseName = datasetBaseName,
-                                  ReferenceFlow = referenceFlow,
-                                  ReferenceFlowUnit = referenceUnit,
-                                  ReferenceFlowInfo = referenceFlowInfo,
-                                  ProductNumber = _productNumber
+                                  var indiCatorKeyValue = GetIndicatorKeyValue(lci);
+                                  var indicatorName = (IndicatorName)Enum.Parse(typeof(IndicatorName), indiCatorKeyValue.Item1, true);
+
+                                  return new
+                                  {
+                                      // TODO: Consider to add IndicatorName as a property to EpdIndicator
+                                      IndicatorName = indicatorName,
+                                      EpdIndicator = new EpdIndicator
+                                      {
+                                          Uuid = uuid,
+                                          Uri = uri,
+                                          IndicatorDescription = indiCatorKeyValue.Item2,
+                                          Direction = GetDirection(lci), // Input or Output
+                                          Unit = GetUnit(lci),
+                                          ProductionA1ToA3 = GetEnviromentalIndicatorValueA1ToA3(lci), // A1 - A3 Special case
+                                          TransportA4 = GetEnviromentalIndicatorValue(lci, "A4"),
+                                          BuildingProcessA5 = GetEnviromentalIndicatorValue(lci, "A5"),
+                                          UsageB1 = GetEnviromentalIndicatorValue(lci, "B1"),
+                                          MaintenanceB2 = GetEnviromentalIndicatorValue(lci, "B2"),
+                                          RepairB3 = GetEnviromentalIndicatorValue(lci, "B3"),
+                                          ReplacementB4 = GetEnviromentalIndicatorValue(lci, "B4"),
+                                          ModernizationB5 = GetEnviromentalIndicatorValue(lci, "B5"),
+                                          EnergyDemandB6 = GetEnviromentalIndicatorValue(lci, "B6"),
+                                          WaterDemandB7 = GetEnviromentalIndicatorValue(lci, "B7"),
+                                          BreakUpC1 = GetEnviromentalIndicatorValue(lci, "C1"),
+                                          TransportC2 = GetEnviromentalIndicatorValue(lci, "C2"),
+                                          WasteManagementC3 = GetEnviromentalIndicatorValue(lci, "C3"),
+                                          WasteDisposalC4 = GetEnviromentalIndicatorValue(lci, "C4"),
+                                          ReuseAndRecoveryD = GetEnviromentalIndicatorValue(lci, "D"),
+                                          DataSetBaseName = datasetBaseName,
+                                          ReferenceFlow = referenceFlow,
+                                          ReferenceFlowUnit = referenceUnit,
+                                          ReferenceFlowInfo = referenceFlowInfo,
+                                      }
+                                  };
                               });
 
-            return lciResults;
+            var epd = new Epd(_productNumber);
+            foreach (var indicator in lciResults)
+            {
+                epd[indicator.IndicatorName] = indicator.EpdIndicator;
+            }
+
+            return epd;
         }
 
 

@@ -10,6 +10,6 @@ namespace EpdConverter.Core.EpdImport
         /// </summary>
         /// <param name="path">A filesystem path, an Url or some other path.</param>
         /// <returns>List of EPD's whereas an EPD corresponds to an indicator with all its modules.</returns>
-        IEnumerable<Epd> GetEpd(string path);
+        Epd GetEpd(string path);
     }
 }

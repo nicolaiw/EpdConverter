@@ -19,7 +19,7 @@ namespace EpdConverter.Core.EpdExport
             _excelFileName = excelFileName;
         }
 
-        public void ExportEpd(IEnumerable<IEnumerable<Epd>> epds)
+        public void ExportEpd(IEnumerable<Epd> epds)
         {
             // Create the file using the FileInfo object
             var file = new FileInfo(_excelFileName);
@@ -64,42 +64,42 @@ namespace EpdConverter.Core.EpdExport
                 var rowOffset = 0;
                 for (int j = 0; j < epds.Count(); j++)
                 {
-                    var sortedEpds = epds.ElementAt(j).ToList();
-                    sortedEpds.Sort(SortByIndicator);
+                    var sortedEpdIndicators = epds.ElementAt(j).GetIndicators().ToList();
+                    sortedEpdIndicators.Sort(SortByIndicator);
 
-                    for (int i = 0; i < sortedEpds.Count(); i++)
+                    for (int i = 0; i < sortedEpdIndicators.Count(); i++)
                     {
                         var row = i + 2 + rowOffset;
 
-                        worksheet.Cells[row, 1].Value = sortedEpds[i].Indicator;
-                        worksheet.Cells[row, 2].Value = sortedEpds[i].Direction;
-                        worksheet.Cells[row, 3].Value = sortedEpds[i].Unit;
-                        InsertValueToExcelCell(worksheet.Cells[row, 4], sortedEpds[i].ProductionA1ToA3);
-                        InsertValueToExcelCell(worksheet.Cells[row, 5], sortedEpds[i].TransportA4);
-                        InsertValueToExcelCell(worksheet.Cells[row, 6], sortedEpds[i].BuildingProcessA5);
-                        InsertValueToExcelCell(worksheet.Cells[row, 7], sortedEpds[i].UsageB1);
-                        InsertValueToExcelCell(worksheet.Cells[row, 8], sortedEpds[i].MaintenanceB2);
-                        InsertValueToExcelCell(worksheet.Cells[row, 9], sortedEpds[i].RepairB3);
-                        InsertValueToExcelCell(worksheet.Cells[row, 10], sortedEpds[i].ReplacementB4);
-                        InsertValueToExcelCell(worksheet.Cells[row, 11], sortedEpds[i].ModernizationB5);
-                        InsertValueToExcelCell(worksheet.Cells[row, 12], sortedEpds[i].EnergyDemandB6, Color.FromArgb(255, 102, 0));
-                        InsertValueToExcelCell(worksheet.Cells[row, 13], sortedEpds[i].WaterDemandB7, Color.FromArgb(255, 102, 0));
-                        InsertValueToExcelCell(worksheet.Cells[row, 14], sortedEpds[i].BreakUpC1);
-                        InsertValueToExcelCell(worksheet.Cells[row, 15], sortedEpds[i].TransportC2);
-                        InsertValueToExcelCell(worksheet.Cells[row, 16], sortedEpds[i].WasteManagementC3);
-                        InsertValueToExcelCell(worksheet.Cells[row, 17], sortedEpds[i].WasteDisposalC4);
-                        InsertValueToExcelCell(worksheet.Cells[row, 18], sortedEpds[i].ReuseAndRecoveryD);
-                        worksheet.Cells[row, 19].Value = sortedEpds[i].DataSetBaseName;
-                        worksheet.Cells[row, 20].Value = sortedEpds[i].ProductNumber;
-                        worksheet.Cells[row, 21].Value = sortedEpds[i].ReferenceFlow;
-                        worksheet.Cells[row, 22].Value = sortedEpds[i].ReferenceFlowUnit;
-                        worksheet.Cells[row, 23].Value = sortedEpds[i].ReferenceFlowInfo;
-                        worksheet.Cells[row, 24].Value = sortedEpds[i].Uuid;
-                        worksheet.Cells[row, 25].Hyperlink = sortedEpds[i].Uri;
+                        worksheet.Cells[row, 1].Value = sortedEpdIndicators[i].IndicatorDescription;
+                        worksheet.Cells[row, 2].Value = sortedEpdIndicators[i].Direction;
+                        worksheet.Cells[row, 3].Value = sortedEpdIndicators[i].Unit;
+                        InsertValueToExcelCell(worksheet.Cells[row, 4], sortedEpdIndicators[i].ProductionA1ToA3);
+                        InsertValueToExcelCell(worksheet.Cells[row, 5], sortedEpdIndicators[i].TransportA4);
+                        InsertValueToExcelCell(worksheet.Cells[row, 6], sortedEpdIndicators[i].BuildingProcessA5);
+                        InsertValueToExcelCell(worksheet.Cells[row, 7], sortedEpdIndicators[i].UsageB1);
+                        InsertValueToExcelCell(worksheet.Cells[row, 8], sortedEpdIndicators[i].MaintenanceB2);
+                        InsertValueToExcelCell(worksheet.Cells[row, 9], sortedEpdIndicators[i].RepairB3);
+                        InsertValueToExcelCell(worksheet.Cells[row, 10], sortedEpdIndicators[i].ReplacementB4);
+                        InsertValueToExcelCell(worksheet.Cells[row, 11], sortedEpdIndicators[i].ModernizationB5);
+                        InsertValueToExcelCell(worksheet.Cells[row, 12], sortedEpdIndicators[i].EnergyDemandB6, Color.FromArgb(255, 102, 0));
+                        InsertValueToExcelCell(worksheet.Cells[row, 13], sortedEpdIndicators[i].WaterDemandB7, Color.FromArgb(255, 102, 0));
+                        InsertValueToExcelCell(worksheet.Cells[row, 14], sortedEpdIndicators[i].BreakUpC1);
+                        InsertValueToExcelCell(worksheet.Cells[row, 15], sortedEpdIndicators[i].TransportC2);
+                        InsertValueToExcelCell(worksheet.Cells[row, 16], sortedEpdIndicators[i].WasteManagementC3);
+                        InsertValueToExcelCell(worksheet.Cells[row, 17], sortedEpdIndicators[i].WasteDisposalC4);
+                        InsertValueToExcelCell(worksheet.Cells[row, 18], sortedEpdIndicators[i].ReuseAndRecoveryD);
+                        worksheet.Cells[row, 19].Value = sortedEpdIndicators[i].DataSetBaseName;
+                        worksheet.Cells[row, 20].Value = epds.ElementAt(j).ProductNumber;
+                        worksheet.Cells[row, 21].Value = sortedEpdIndicators[i].ReferenceFlow;
+                        worksheet.Cells[row, 22].Value = sortedEpdIndicators[i].ReferenceFlowUnit;
+                        worksheet.Cells[row, 23].Value = sortedEpdIndicators[i].ReferenceFlowInfo;
+                        worksheet.Cells[row, 24].Value = sortedEpdIndicators[i].Uuid;
+                        worksheet.Cells[row, 25].Hyperlink = sortedEpdIndicators[i].Uri;
                         worksheet.Cells[row, 25].Value = "Link zur EPD";
                     }
 
-                    rowOffset += sortedEpds.Count() + 1;
+                    rowOffset += sortedEpdIndicators.Count() + 1;
                 }
 
                 /* Format as Table */
@@ -139,10 +139,10 @@ namespace EpdConverter.Core.EpdExport
             }
         }
 
-        private int SortByIndicator(Epd a, Epd b)
+        private int SortByIndicator(EpdIndicator a, EpdIndicator b)
         {
-            var indicatorAcronymA = a.Indicator.Split(' ').Last().Replace("(", string.Empty).Replace(")", string.Empty);
-            var indicatorAcronymB = b.Indicator.Split(' ').Last().Replace("(", string.Empty).Replace(")", string.Empty);
+            var indicatorAcronymA = a.IndicatorDescription.Split(' ').Last().Replace("(", string.Empty).Replace(")", string.Empty);
+            var indicatorAcronymB = b.IndicatorDescription.Split(' ').Last().Replace("(", string.Empty).Replace(")", string.Empty);
 
             var indexOfA = Array.IndexOf(Constants.INDICATOR_KEY_NAME_MAPPING.Keys.ToArray(), indicatorAcronymA);
             var indexOfB = Array.IndexOf(Constants.INDICATOR_KEY_NAME_MAPPING.Keys.ToArray(), indicatorAcronymB);

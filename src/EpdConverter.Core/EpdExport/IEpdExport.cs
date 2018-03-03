@@ -9,6 +9,6 @@ namespace EpdConverter.Core.EpdExport
         /// Exports a list of EPD's. One EPD corresponds to an indicator with all it's modules.
         /// </summary>
         /// <param name="epds">EPD's to Export.</param>
-        void ExportEpd(IEnumerable<IEnumerable<Epd>> epds);
+        void ExportEpd(IEnumerable<Epd> epds);
     }
 }

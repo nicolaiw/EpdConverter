@@ -103,16 +103,17 @@ namespace EpdConverter.Console.Test
 
             L("Start importing ...");
 
-            var taskList = new List<Task<List<Epd>>>();
+            var taskList = new List<Task<Epd>>();
+
             for (int i = 0; i < epdFiles.Count(); i++)
             {
                 try
                 {
                     var tmp = i;
 
-                    var task = new Task<List<Epd>>(() =>
+                    var task = new Task<Epd>(() =>
                     {
-                        var res = EpdConvert.ImportEpdFromFile(epdFiles[tmp].FullName, tmp + 1, selectedIndicators, str => L(str, ConsoleColor.Yellow)).ToList();
+                        var res = EpdConvert.ImportEpdFromFile(epdFiles[tmp].FullName, tmp + 1, selectedIndicators, str => L(str, ConsoleColor.Yellow));
 
                         L($"{tmp + 1}. {epdFiles[tmp].Name} done.");
 
@@ -133,7 +134,7 @@ namespace EpdConverter.Console.Test
 
             var epds = await taskList.ForEachAsyncThrottled(MAX_CONCURRENT_WEB_CALLS);
 
-            epds.OrderBy(e => e.First().ProductNumber);
+            epds.OrderBy(e => e.ProductNumber);
 
             try
             {

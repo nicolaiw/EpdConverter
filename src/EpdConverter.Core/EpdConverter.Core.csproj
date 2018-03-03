@@ -55,6 +55,8 @@
     <Compile Include="EpdExport\IEpdExport.cs" />
     <Compile Include="EpdImport\IEpdImport.cs" />
     <Compile Include="Models\Epd.cs" />
+    <Compile Include="Models\EpdIndicator.cs" />
+    <Compile Include="Models\IndicatorName.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>

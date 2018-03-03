@@ -13,7 +13,7 @@ namespace EpdConverter.Core
         /************************************************
                       Facades public API
         ************************************************/
-        public static IEnumerable<Epd> ImportEpdFromFile(
+        public static Epd ImportEpdFromFile(
             string filePath,
             int productNumber,
             IEnumerable<string> indicatorFilter,
@@ -25,7 +25,7 @@ namespace EpdConverter.Core
         }
 
 
-        public static void ExportEpdToExcel(string excelFileName, IEnumerable<IEnumerable<Epd>> epds)
+        public static void ExportEpdToExcel(string excelFileName, IEnumerable<Epd> epds)
         {
             Export(new EpdToXlsx(excelFileName), epds);
         }
@@ -35,12 +35,12 @@ namespace EpdConverter.Core
                           Privates
         ************************************************/
 
-        private static IEnumerable<Epd> Import(IEpdImport importer, string path)
+        private static Epd Import(IEpdImport importer, string path)
         {
             return importer.GetEpd(path);
         }
 
-        private static void Export(IEpdExport exporter, IEnumerable<IEnumerable<Epd>> epds)
+        private static void Export(IEpdExport exporter, IEnumerable<Epd> epds)
         {
             exporter.ExportEpd(epds);
         }

@@ -6,7 +6,6 @@ using System.Threading.Tasks;
 
 namespace EpdConverter.Core.Models
 {
-    // 
     public class Epd
     {
         /* Usefull when you want to sort a list of EPDs */

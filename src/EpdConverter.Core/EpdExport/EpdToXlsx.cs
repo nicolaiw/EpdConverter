@@ -89,13 +89,13 @@ namespace EpdConverter.Core.EpdExport
                         InsertValueToExcelCell(worksheet.Cells[row, 16], sortedEpdIndicators[i].WasteManagementC3);
                         InsertValueToExcelCell(worksheet.Cells[row, 17], sortedEpdIndicators[i].WasteDisposalC4);
                         InsertValueToExcelCell(worksheet.Cells[row, 18], sortedEpdIndicators[i].ReuseAndRecoveryD);
-                        worksheet.Cells[row, 19].Value = sortedEpdIndicators[i].DataSetBaseName;
+                        worksheet.Cells[row, 19].Value = epds.ElementAt(j).DataSetBaseName;
                         worksheet.Cells[row, 20].Value = epds.ElementAt(j).ProductNumber;
-                        worksheet.Cells[row, 21].Value = sortedEpdIndicators[i].ReferenceFlow;
-                        worksheet.Cells[row, 22].Value = sortedEpdIndicators[i].ReferenceFlowUnit;
-                        worksheet.Cells[row, 23].Value = sortedEpdIndicators[i].ReferenceFlowInfo;
-                        worksheet.Cells[row, 24].Value = sortedEpdIndicators[i].Uuid;
-                        worksheet.Cells[row, 25].Hyperlink = sortedEpdIndicators[i].Uri;
+                        worksheet.Cells[row, 21].Value = epds.ElementAt(j).ReferenceFlow;
+                        worksheet.Cells[row, 22].Value = epds.ElementAt(j).ReferenceFlowUnit;
+                        worksheet.Cells[row, 23].Value = epds.ElementAt(j).ReferenceFlowInfo;
+                        worksheet.Cells[row, 24].Value = epds.ElementAt(j).Uuid;
+                        worksheet.Cells[row, 25].Hyperlink = epds.ElementAt(j).Uri;
                         worksheet.Cells[row, 25].Value = "Link zur EPD";
                     }
 

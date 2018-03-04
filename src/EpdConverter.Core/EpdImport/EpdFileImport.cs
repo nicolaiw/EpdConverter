@@ -29,7 +29,7 @@ namespace EpdConverter.Core.EpdImport
             var uuid = GetUuid(xml);
             var uri = GetUri(xml);
             var datasetBaseName = GetDataSetBaseName(xml);
-            var referenceUnit = GetReferenceFlowUnit(xml);
+            var referenceFlowUnit = GetReferenceFlowUnit(xml);
             var referenceFlowInfo = GetReferenceFlowInfo(xml);
             var referenceFlow = GetReferenceFlowMeanAmount(xml);
 
@@ -50,8 +50,6 @@ namespace EpdConverter.Core.EpdImport
                                       IndicatorName = indicatorName,
                                       EpdIndicator = new EpdIndicator
                                       {
-                                          Uuid = uuid,
-                                          Uri = uri,
                                           IndicatorDescription = indiCatorKeyValue.Item2,
                                           Direction = GetDirection(lci), // Input or Output
                                           Unit = GetUnit(lci),
@@ -69,16 +67,22 @@ namespace EpdConverter.Core.EpdImport
                                           TransportC2 = GetEnviromentalIndicatorValue(lci, "C2"),
                                           WasteManagementC3 = GetEnviromentalIndicatorValue(lci, "C3"),
                                           WasteDisposalC4 = GetEnviromentalIndicatorValue(lci, "C4"),
-                                          ReuseAndRecoveryD = GetEnviromentalIndicatorValue(lci, "D"),
-                                          DataSetBaseName = datasetBaseName,
-                                          ReferenceFlow = referenceFlow,
-                                          ReferenceFlowUnit = referenceUnit,
-                                          ReferenceFlowInfo = referenceFlowInfo,
+                                          ReuseAndRecoveryD = GetEnviromentalIndicatorValue(lci, "D")
                                       }
                                   };
                               });
 
-            var epd = new Epd(_productNumber);
+            var epd = new Epd()
+            {
+                Uuid = uuid,
+                ProductNumber = _productNumber,
+                Uri = uri,
+                DataSetBaseName = datasetBaseName,
+                ReferenceFlow = referenceFlow,
+                ReferenceFlowUnit = referenceFlowUnit,
+                ReferenceFlowInfo = referenceFlowInfo
+            };
+
             foreach (var indicator in lciResults)
             {
                 epd[indicator.IndicatorName] = indicator.EpdIndicator;

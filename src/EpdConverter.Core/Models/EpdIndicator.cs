@@ -6,29 +6,17 @@ namespace EpdConverter.Core.Models
     // TODO: Encapsulation -> private setters
     public class EpdIndicator
     {
-        /*
+        /* TODO: Translate comment to en
          * Unter Umständen sind die Pahsen A1-A3 separat ODER aggregiert angegeben.
          * Modeliert wird die Anweundung Jedoch immer in aggregierter Form für diese Phasen.
          * Beispiel für aggregierte EPD: Spannbeton-Fertigteildecken
          */
-
-        public Guid Uuid { get; set; }
-
-        public Uri Uri { get; set; }
 
         public string IndicatorDescription { get; set; }
 
         public string Direction { get; set; }
 
         public string Unit { get; set; }
-
-        public string DataSetBaseName { get; set; }
-
-        public string ReferenceFlowInfo { get; set; }
-
-        public double ReferenceFlow { get; set; }
-
-        public string ReferenceFlowUnit { get; set; }
 
         /// <summary>
         /// A1 - A3

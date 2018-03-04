@@ -24,7 +24,7 @@ Target "Clean" (fun _ ->
 )
 
 Target "SetVersions" (fun _ ->
-    CreateCSharpAssemblyInfo "./src/app/EpdToExcel.Core/Properties/AssemblyInfo.cs"
+    CreateCSharpAssemblyInfo "./src/app/EpdConverter.Core/Properties/AssemblyInfo.cs"
         [Attribute.Title "EpdToExcel.Core"
          Attribute.Description "Epd to Excel converter"
          Attribute.Guid "4daa8a08-9b1e-42e6-b2a3-8bb8a7f71199"
@@ -32,7 +32,7 @@ Target "SetVersions" (fun _ ->
          Attribute.Version version
          Attribute.FileVersion version]
 
-    CreateCSharpAssemblyInfo "./src/app/EpdToExcel.Console.Test/Properties/AssemblyInfo.cs"
+    CreateCSharpAssemblyInfo "./src/app/EpdConverter.Console.Test/Properties/AssemblyInfo.cs"
         [Attribute.Title "EpdToExcel.Console.Test"
          Attribute.Description "EpdToExcel.Console.Test"
          Attribute.Guid "09c1bce8-d5dd-4b42-b548-16ad8a67fba8"

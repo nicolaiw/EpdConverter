@@ -8,7 +8,7 @@ namespace EpdConverter.Core.Models
 {
     public enum IndicatorName
     {
-        // TODO; add comments with long descriptions
+        // TODO: Add comments with long descriptions
 
         PERE,
         PERM,

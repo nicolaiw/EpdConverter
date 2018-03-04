@@ -18,6 +18,7 @@ namespace EpdConverter.Core
         /// </summary>
         public static readonly Dictionary<string, string> INDICATOR_KEY_NAME_MAPPING = new Dictionary<string, string>
         {
+            /* TODO: Shift the values to resources */
             ["PERE"] = "Erneuerbare Primärenergie als Energieträger (PERE)",
             ["PERM"] = "Erneuerbare Primärenergie zur stofflichen Nutzung (PERM)",
             ["PERT"] = "Total erneuerbare Primärenergie (PERT)",

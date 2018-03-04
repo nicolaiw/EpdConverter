@@ -8,20 +8,36 @@ namespace EpdConverter.Core.Models
 {
     public class Epd
     {
+        /* Stores the the corresponding indicators with it's module values */
         private Dictionary<IndicatorName, EpdIndicator> _indicators;
-        
-        public int ProductNumber { get; set; } /* Usefull when you want to sort a list of EPDs */
+
+        /* Usefull when you want to sort a list of EPDs */
+        public int ProductNumber { get; set; }
+
+        /* The EPD's Uuid */
         public Guid Uuid { get; set; }
+
+        /* The uri to the EPD dataset */
         public Uri Uri { get; set; }
+
+        /* The name of the EPD */
         public string DataSetBaseName { get; set; }
+
+        /* Additional reference flow informations */
         public string ReferenceFlowInfo { get; set; }
+
+        /* The reference flow */
         public double ReferenceFlow { get; set; }
+
+        /* The reference flow unit */
         public string ReferenceFlowUnit { get; set; }
+
 
         public Epd()
         {
             _indicators = new Dictionary<IndicatorName, EpdIndicator>();
         }
+
 
         public EpdIndicator this[IndicatorName indicator]
         {

@@ -2,7 +2,7 @@
 cls
 
 
-.paket\paket.exe restore
+.paket\paket.exe restore -v -f
 if errorlevel 1 (
   exit /b %errorlevel%
 )
